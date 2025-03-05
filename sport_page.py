@@ -59,14 +59,30 @@ class SportPrescriptionPage(QWidget):
 
         self.setLayout(layout)
 
+    # def parse_response(self, response):
+    #     # 假设 AI 返回的格式是固定的
+    #     exercise_match = re.search(r'运动项目:\s*(.*)', response)
+    #     frequency_match = re.search(r'运动频率:\s*每周\s*(\d+)\s*次', response)
+    #     intensity_match = re.search(r'运动强度:\s*心率的\s*(\d+)%', response)
+    #
+    #     exercise = exercise_match.group(1).strip() if exercise_match else '无数据'
+    #     frequency = frequency_match.group(1).strip() if frequency_match else '无数据'
+    #     intensity = intensity_match.group(1).strip() if intensity_match else '无数据'
+    #
+    #     return exercise, frequency, intensity
+
     def parse_response(self, response):
-        # 假设 AI 返回的格式是固定的
-        exercise_match = re.search(r'运动项目:\s*(.*)', response)
-        frequency_match = re.search(r'运动频率:\s*每周\s*(\d+)\s*次', response)
-        intensity_match = re.search(r'运动强度:\s*心率的\s*(\d+)%', response)
+        try:
+            exercise_match = re.search(r'运动项目:\s*(.*)', response)
+            frequency_match = re.search(r'运动频率:\s*每周\s*(\d+)\s*次', response)
+            intensity_match = re.search(r'运动强度:\s*心率的\s*(\d+)%', response)
 
-        exercise = exercise_match.group(1).strip() if exercise_match else '无数据'
-        frequency = frequency_match.group(1).strip() if frequency_match else '无数据'
-        intensity = intensity_match.group(1).strip() if intensity_match else '无数据'
+            exercise = exercise_match.group(1).strip() if exercise_match else '无数据'
+            frequency = frequency_match.group(1).strip() if frequency_match else '无数据'
+            intensity = intensity_match.group(1).strip() if intensity_match else '无数据'
 
-        return exercise, frequency, intensity
+            return exercise, frequency, intensity
+        except Exception as e:
+            print(f"Error parsing response: {e}")
+            return '无数据', '无数据', '无数据'
+

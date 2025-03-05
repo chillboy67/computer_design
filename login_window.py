@@ -4,8 +4,7 @@
 -- wy 2025-02-26
 '''
 
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QStackedWidget, \
-    QFormLayout, QMessageBox
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QStackedWidget, QFormLayout, QMessageBox
 
 
 class LoginWindow(QWidget):
