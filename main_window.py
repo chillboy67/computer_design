@@ -10,11 +10,12 @@ from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, Q
 from PySide6.QtCore import Qt
 
 from llm_utils import get_LLM_response
+from sport_page import SportPrescriptionPage
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        
+
         # 创建主布局，水平布局（左边和右边）
         main_layout = QHBoxLayout()
 
@@ -46,6 +47,13 @@ class MainWindow(QWidget):
         self.diagnosis_output.setPlaceholderText("等待用户输入...")
         self.diagnosis_output.setReadOnly(True)  # 设置为只读，避免用户修改
         self.diagnosis_output.setFixedWidth(580)  # 设置固定宽度为400
+
+        # 运动处方按钮
+        self.sport_prescription_button = QPushButton("运动处方")
+        self.sport_prescription_button.clicked.connect(self.open_sport_prescription_page)
+        self.sport_prescription_button.setEnabled(False)  # 初始状态下禁用按钮
+        left_layout.addWidget(self.sport_prescription_button)
+
         # 将左边和右边布局加入主布局
         main_layout.addLayout(left_layout, 1)
         main_layout.addWidget(self.diagnosis_output, 2)
@@ -68,3 +76,11 @@ class MainWindow(QWidget):
 
         # 在右侧显示诊断结果
         self.diagnosis_output.setHtml(response)
+
+        # 启用运动处方按钮
+        self.sport_prescription_button.setEnabled(True)
+        self.response = response
+
+    def open_sport_prescription_page(self):
+        self.sport_prescription_window = SportPrescriptionPage(self.response)
+        self.sport_prescription_window.show()
