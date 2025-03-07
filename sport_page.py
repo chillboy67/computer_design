@@ -35,7 +35,6 @@ class SportPrescriptionPage(QWidget):
         self.exercise_display = QTextEdit()
         self.exercise_display.setPlainText(exercise)
         self.exercise_display.setReadOnly(True)
-        self.exercise_display.setStyleSheet("background-color: white; border: 1px solid #ccc; padding: 10px;")
         layout.addWidget(self.exercise_label, 1, 0)
         layout.addWidget(self.exercise_display, 1, 1)
 
@@ -45,7 +44,6 @@ class SportPrescriptionPage(QWidget):
         self.frequency_display = QTextEdit()
         self.frequency_display.setPlainText(frequency)
         self.frequency_display.setReadOnly(True)
-        self.frequency_display.setStyleSheet("background-color: white; border: 1px solid #ccc; padding: 10px;")
         layout.addWidget(self.frequency_label, 2, 0)
         layout.addWidget(self.frequency_display, 2, 1)
 
@@ -55,7 +53,6 @@ class SportPrescriptionPage(QWidget):
         self.intensity_display = QTextEdit()
         self.intensity_display.setPlainText(f"{intensity}%")
         self.intensity_display.setReadOnly(True)
-        self.intensity_display.setStyleSheet("background-color: white; border: 1px solid #ccc; padding: 10px;")
         layout.addWidget(self.intensity_label, 3, 0)
         layout.addWidget(self.intensity_display, 3, 1)
 
