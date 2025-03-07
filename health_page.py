@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+
 class HealthApp:
     def __init__(self, root):
         self.root = root
