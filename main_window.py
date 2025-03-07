@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt
 
 from llm_utils import get_LLM_response
 from sport_page import SportPrescriptionPage
+from ai_for_health import get_AI_response
 
 class MainWindow(QWidget):
     def __init__(self):
