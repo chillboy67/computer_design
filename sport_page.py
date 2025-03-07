@@ -1,9 +1,10 @@
 # sport_page.py
 import sys
 import re
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QMessageBox
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QMessageBox, QGridLayout
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
+
 
 class SportPrescriptionPage(QWidget):
     def __init__(self, response):
@@ -13,16 +14,17 @@ class SportPrescriptionPage(QWidget):
 
     def initUI(self):
         self.setWindowTitle('运动处方页面')
-        self.setGeometry(100, 100, 600, 400)
+        self.setGeometry(100, 100, 800, 400)
         self.setStyleSheet("background-color: #f0f0f0;")
 
-        layout = QVBoxLayout()
+        layout = QGridLayout()
+        layout.setSpacing(10)
 
         # 标题
         title_label = QLabel('运动处方')
         title_label.setFont(QFont('楷体', 24, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title_label)
+        layout.addWidget(title_label, 0, 0, 1, 2)
 
         # 解析运动建议
         exercise, frequency, intensity = self.parse_response(self.response)
@@ -34,28 +36,28 @@ class SportPrescriptionPage(QWidget):
         self.exercise_display.setPlainText(exercise)
         self.exercise_display.setReadOnly(True)
         self.exercise_display.setStyleSheet("background-color: white; border: 1px solid #ccc; padding: 10px;")
-        layout.addWidget(self.exercise_label)
-        layout.addWidget(self.exercise_display)
+        layout.addWidget(self.exercise_label, 1, 0)
+        layout.addWidget(self.exercise_display, 1, 1)
 
         # 运动频率模块
-        self.frequency_label = QLabel('运动频率 (每周次数):')
+        self.frequency_label = QLabel('运动频率:')
         self.frequency_label.setFont(QFont('楷体', 14, QFont.Bold))
         self.frequency_display = QTextEdit()
         self.frequency_display.setPlainText(frequency)
         self.frequency_display.setReadOnly(True)
         self.frequency_display.setStyleSheet("background-color: white; border: 1px solid #ccc; padding: 10px;")
-        layout.addWidget(self.frequency_label)
-        layout.addWidget(self.frequency_display)
+        layout.addWidget(self.frequency_label, 2, 0)
+        layout.addWidget(self.frequency_display, 2, 1)
 
         # 运动强度模块
-        self.intensity_label = QLabel('运动强度 (心率百分比):')
+        self.intensity_label = QLabel('运动强度:')
         self.intensity_label.setFont(QFont('楷体', 14, QFont.Bold))
         self.intensity_display = QTextEdit()
         self.intensity_display.setPlainText(f"{intensity}%")
         self.intensity_display.setReadOnly(True)
         self.intensity_display.setStyleSheet("background-color: white; border: 1px solid #ccc; padding: 10px;")
-        layout.addWidget(self.intensity_label)
-        layout.addWidget(self.intensity_display)
+        layout.addWidget(self.intensity_label, 3, 0)
+        layout.addWidget(self.intensity_display, 3, 1)
 
         self.setLayout(layout)
 
@@ -70,3 +72,4 @@ class SportPrescriptionPage(QWidget):
         intensity = intensity_match.group(1).strip() if intensity_match else '无数据'
 
         return exercise, frequency, intensity
+
