@@ -230,3 +230,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = HealthApp(root)
     root.mainloop()
+
