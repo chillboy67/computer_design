@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton,
-    QVBoxLayout, QHBoxLayout, QCheckBox, QStackedWidget
+    QVBoxLayout, QHBoxLayout, QCheckBox, QStackedWidget, QMessageBox
 )
 from PyQt6.QtGui import QFont, QPixmap, QMouseEvent
 from PyQt6.QtCore import Qt, QPoint
@@ -86,21 +86,22 @@ class MedicalLoginUI(QWidget):
         title.setFont(QFont("Arial", 18, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        username = QLineEdit()
-        username.setPlaceholderText("请输入用户名")
-        username.setFont(QFont("Arial", 12))
-        username.setStyleSheet(self.input_style())
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("请输入用户名")
+        self.username_input.setFont(QFont("Arial", 12))
+        self.username_input.setStyleSheet(self.input_style())
 
-        password = QLineEdit()
-        password.setPlaceholderText("请输入密码")
-        password.setEchoMode(QLineEdit.EchoMode.Password)
-        password.setFont(QFont("Arial", 12))
-        password.setStyleSheet(self.input_style())
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("请输入密码")
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.setFont(QFont("Arial", 12))
+        self.password_input.setStyleSheet(self.input_style())
 
         remember_me = QCheckBox("记住密码")
         login_btn = QPushButton("登录")
         login_btn.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         login_btn.setStyleSheet(self.button_style())
+        login_btn.clicked.connect(self.check_credentials)
 
         register_btn = QPushButton("没有账号？注册")
         register_btn.setFont(QFont("Arial", 10))
@@ -108,8 +109,8 @@ class MedicalLoginUI(QWidget):
         register_btn.clicked.connect(self.show_register_page)
 
         layout.addWidget(title)
-        layout.addWidget(username)
-        layout.addWidget(password)
+        layout.addWidget(self.username_input)
+        layout.addWidget(self.password_input)
         layout.addWidget(remember_me)
         layout.addWidget(login_btn)
         layout.addWidget(register_btn)
@@ -204,6 +205,16 @@ class MedicalLoginUI(QWidget):
                 color: red;
             }
         """
+
+    def check_credentials(self):
+        """ 检查登录凭据 """
+        username = self.username_input.text()
+        password = self.password_input.text()
+
+        if username == "admin" and password == "123":
+            QMessageBox.information(self, "登录成功", "欢迎使用智能医疗健康系统！")
+        else:
+            QMessageBox.warning(self, "错误", "用户名或密码错误")
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
