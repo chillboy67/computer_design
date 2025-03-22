@@ -133,6 +133,7 @@ class HealthApp:
                                    "body_fat"] > 28) else "正常"
             report.append(f"体脂率：{self.data['clinical']['body_fat']}% ({status})")
 
+
         # 显示评估结果
         result_window = tk.Toplevel()
         result_window.title("健康评估报告")
