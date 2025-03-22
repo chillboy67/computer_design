@@ -142,3 +142,4 @@ class HealthApp:
 if __name__ == "__main__":
     app = HealthApp()
     app.root.mainloop()
+
