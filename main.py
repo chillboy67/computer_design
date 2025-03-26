@@ -9,6 +9,11 @@ from qt_material import apply_stylesheet
 
 from login_window import LoginWindow
 from main_window import MainWindow
+from db_utils import init_db
+
+if __name__ == "__main__":
+    init_db()  # 初始化数据库
+    app = QApplication(sys.argv)
 
 # 主程序
 app = QApplication(sys.argv)
