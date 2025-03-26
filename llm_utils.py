@@ -8,7 +8,7 @@ def get_LLM_response(prompt):
     response = client.chat.completions.create(
         model="glm-4-plus",
         messages=[
-            {"role": "system", "content": "你是一个资深的医学专家，你的任务是根据用户输入的数据，为用户提供专业、准确的运动处方，包括运动项目、运动频率、运动强度，你的资料来源是PubMed。"},
+            {"role": "system", "content": "你是一个资深的医学专家，你的任务是根据用户输入的数据，为用户提供专业、准确的运动处方，包括运动项目、运动频率、运动强度，你将参考PubMed的资料。"},
             {"role": "user", "content": prompt},
         ],
     )
