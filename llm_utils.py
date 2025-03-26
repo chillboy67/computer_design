@@ -1,6 +1,6 @@
 from zhipuai import ZhipuAI
 
-api_key = '817be447d3b5470ba10349dde056a376.wN79bG2OhaUU2Cg3'
+api_key = '***REMOVED***'
 
 
 def get_LLM_response(prompt):
