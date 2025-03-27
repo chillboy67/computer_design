@@ -2,43 +2,35 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from dotenv import load_dotenv
+from base import Base  # 从 base.py 导入 Base
 
-# 1. 加载环境变量
 load_dotenv()
 
-# 2. 设置默认数据库连接（防止环境变量未配置）
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",  # 从 .env 文件中读取
-    "sqlite:///health_db.sqlite"  # 默认值（SQLite）
-)
+# 配置数据库连接
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///health_db.sqlite")
 
-# 3. 配置数据库引擎
 if DATABASE_URL.startswith("sqlite"):
-    # SQLite 需要特殊参数 `check_same_thread`
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False}
-    )
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    # 其他数据库（如 PostgreSQL/MySQL）直接连接
     engine = create_engine(DATABASE_URL)
 
-# 4. 创建数据库会话工厂
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 5. 声明基类（用于 ORM 模型继承）
-Base = declarative_base()
-
-# 6. 初始化数据库（创建所有表）
 def init_db():
     try:
+        from models import User, HealthRecord  # 延迟导入
+        print("正在创建数据库表...")
         Base.metadata.create_all(bind=engine)
-        print("[Success] Database initialized.")
+        print("表结构创建成功")
+
+        # 创建默认用户
+        from user_service import UserService
+        if not UserService.verify_user("admin", "123"):
+            print("正在创建默认用户 admin...")
+            UserService.create_user("admin", "123")
+        else:
+            print("默认用户已存在")
     except Exception as e:
-        print(f"[Error] Database initialization failed: {str(e)}")
+        print(f"[Critical Error] 初始化失败: {str(e)}")
+        raise  # 抛出异常以终止程序
