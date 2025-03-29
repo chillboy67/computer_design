@@ -1,6 +1,6 @@
 from zhipuai import ZhipuAI
 
-api_key = '817be447d3b5470ba10349dde056a376.wN79bG2OhaUU2Cg3'
+api_key = '83e30db5ee714aecb44d9a81b9c359ac.niOJggGHdVK8bZnB'
 
 
 def get_LLM_response(prompt):
