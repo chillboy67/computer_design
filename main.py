@@ -7,7 +7,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
-from login_window import LoginWindow
+from login03 import MedicalLoginUI
 from main_window import MainWindow
 from db_utils import init_db
 
@@ -21,10 +21,10 @@ if __name__ == "__main__":
     apply_stylesheet(app, theme='default_light.xml')
 
     # 创建并显示登录窗口
-    window = LoginWindow(MainWindow())
+    window = MedicalLoginUI(MainWindow)
     window.setWindowTitle("健康管理系统")
     window.resize(800, 600)
     window.show()
 
     # 启动事件循环
-    app.exec()
+    sys.exit(app.exec())
