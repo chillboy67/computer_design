@@ -4,19 +4,27 @@
 -- wy 2025-02-26
 '''
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QStackedWidget, QFormLayout, QMessageBox
+from PySide6.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
 from login_window import LoginWindow
 from main_window import MainWindow
+from db_utils import init_db
 
-# 主程序
-app = QApplication(sys.argv)
-# 应用 Material 主题样式
-apply_stylesheet(app, theme='default_light.xml')
-window = LoginWindow(MainWindow())
-window.setWindowTitle("应用的名称")
-# 设置窗口的大小
-window.show()
+if __name__ == "__main__":
+    init_db()  # 初始化数据库
 
-app.exec()
+    # 只创建一个 QApplication 实例
+    app = QApplication(sys.argv)
+
+    # 应用 Material 主题样式
+    apply_stylesheet(app, theme='default_light.xml')
+
+    # 创建并显示登录窗口
+    window = LoginWindow(MainWindow())
+    window.setWindowTitle("健康管理系统")
+    window.resize(800, 600)
+    window.show()
+
+    # 启动事件循环
+    app.exec()
