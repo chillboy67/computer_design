@@ -23,6 +23,12 @@ class SportPrescriptionPage(QWidget):
         # 存储运动数据
         self.health_data = initial_data or ""
 
+        # 解析AI返回内容的不同部分
+        self.exercise_types = ""  # 运动项目
+        self.exercise_frequency = ""  # 运动频率
+        self.exercise_intensity = ""  # 运动强度
+        self.parse_ai_content()
+
         # 创建UI
         self.init_ui()
 
@@ -32,6 +38,30 @@ class SportPrescriptionPage(QWidget):
         else:
             # 默认显示运动项目建议
             self.show_cardiovascular()
+
+    def parse_ai_content(self):
+        """解析AI返回的内容，分离出不同部分"""
+        if not self.health_data:
+            return
+
+        # 寻找运动项目部分
+        if "运动项目" in self.health_data:
+            start = self.health_data.find("运动项目")
+            end = self.health_data.find("运动频率") if "运动频率" in self.health_data else len(self.health_data)
+            self.exercise_types = f"<h2>运动项目</h2>{self.health_data[start + 4:end]}"
+
+        # 寻找运动频率部分
+        if "运动频率" in self.health_data:
+            start = self.health_data.find("运动频率")
+            end = self.health_data.find("运动强度") if "运动强度" in self.health_data else len(self.health_data)
+            self.exercise_frequency = f"<h2>运动频率</h2>{self.health_data[start + 4:end]}"
+
+        # 寻找运动强度部分
+        if "运动强度" in self.health_data:
+            start = self.health_data.find("运动强度")
+            end = len(self.health_data)
+            self.exercise_intensity = f"<h2>运动强度</h2>{self.health_data[start + 4:end]}"
+
 
     def init_ui(self):
         """初始化界面"""
@@ -64,8 +94,6 @@ class SportPrescriptionPage(QWidget):
             button.clicked.connect(callback)
             nav_layout.addWidget(button)
             self.nav_buttons.append(button)
-
-
 
         nav_layout.addStretch()
         splitter.addWidget(nav_widget)
@@ -108,60 +136,57 @@ class SportPrescriptionPage(QWidget):
         main_layout.addLayout(bottom_layout)
 
     def display_initial_data(self):
-        """显示从主窗口传递的初始运动数据"""
-        self.content_browser.setHtml(self.health_data)
-        # 默认显示运动项目建议
-        self.show_cardiovascular()
+        """显示从主窗口传递的初始AI生成的运动处方数据"""
+        # 显示完整的AI响应
+        self.content_browser.setHtml(f"<h1>个性化运动处方</h1>{self.health_data}")
+        # 默认高亮运动项目按钮
+        self.highlight_button(0)
 
     def show_cardiovascular(self):
         """显示运动项目推荐"""
         # 高亮当前按钮
         self.highlight_button(0)
 
-        # 显示运动项目建议内容
-        self.content_browser.setHtml("""
-        <h2>运动项目</h2>
-        <p>基于您的身体状况和运动喜好，以下是为您推荐的运动项目：</p>
-        <ul>
-            <li><strong>推荐运动：</strong>根据您的体能和偏好，建议进行适合的有氧或力量训练。</li>
-            <li><strong>运动目标：</strong>帮助提升心肺功能及整体健康。</li>
-            <li><strong>活动建议：</strong>结合多种运动方式，确保运动多样性。</li>
-        </ul>
-        <p>以上建议仅供参考，如有疑问请咨询专业教练。</p>
-        """)
+        # 如果有AI生成的内容，则显示AI内容
+        if self.exercise_types:
+            self.content_browser.setHtml(self.exercise_types)
+        else:
+            # 无AI内容时显示默认内容
+            self.content_browser.setHtml("""
+                <h2>运动项目</h2>
+                <p>基于您的身体状况和运动喜好，以下是为您推荐的运动项目：</p>
+                <p>暂无个性化推荐，请输入您的健康数据并点击"运动处方"按钮获取。</p>
+                """)
 
     def show_metabolism(self):
         """显示运动频率建议"""
         # 高亮当前按钮
         self.highlight_button(1)
 
-        self.content_browser.setHtml("""
-        <h2>运动频率</h2>
-        <p>基于您的生活习惯和体能状况，以下是为您推荐的运动频率建议：</p>
-        <ul>
-            <li><strong>每周运动次数：</strong>建议每周至少进行3-5次运动。</li>
-            <li><strong>运动时长：</strong>每次运动建议持续30-60分钟。</li>
-            <li><strong>频率调整：</strong>根据您的体能进步逐步调整运动频率。</li>
-        </ul>
-        <p>合理的运动频率有助于提升健康和保持体能。</p>
-        """)
+        # 如果有AI生成的内容，则显示AI内容
+        if self.exercise_frequency:
+            self.content_browser.setHtml(self.exercise_frequency)
+        else:
+            # 无AI内容时显示默认内容
+            self.content_browser.setHtml("""
+            <h2>运动频率</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"运动处方"按钮获取。</p>
+            """)
 
     def show_body_composition(self):
         """显示运动强度建议"""
         # 高亮当前按钮
         self.highlight_button(2)
 
-        self.content_browser.setHtml("""
-        <h2>运动强度</h2>
-        <p>运动强度的合理控制对达到运动效果至关重要：</p>
-        <ul>
-            <li><strong>低强度运动：</strong>适合初学者和恢复期人群，保持轻松运动。</li>
-            <li><strong>中等强度运动：</strong>提升心肺功能和燃脂效果的理想选择。</li>
-            <li><strong>高强度运动：</strong>适用于有一定基础的人群，挑战自我极限。</li>
-        </ul>
-        <p>根据个人体能选择合适的运动强度，确保运动安全和效果。</p>
-        """)
-
+        # 如果有AI生成的内容，则显示AI内容
+        if self.exercise_intensity:
+            self.content_browser.setHtml(self.exercise_intensity)
+        else:
+            # 无AI内容时显示默认内容
+            self.content_browser.setHtml("""
+            <h2>运动强度</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"运动处方"按钮获取。</p>
+            """)
 
     def handle_ai_response(self, response):
         """处理AI响应并显示结果"""
@@ -219,6 +244,6 @@ class SportPrescriptionPage(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = HealthAssessmentPage()
+    window = SportPrescriptionPage()
     window.show()
     sys.exit(app.exec())
