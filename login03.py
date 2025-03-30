@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from hashlib import sha256
 import sys
 import os
+import json
 
 # 设置数据库连接
 DATABASE_URL = "sqlite:///users.db"
@@ -81,6 +82,7 @@ class MedicalLoginUI(QWidget):
         self.old_pos = None  # 记录鼠标拖动位置
         self.db_manager = DatabaseManager()  # 实例化数据库管理器
         self.initUI()
+        self.load_credentials()  # 加载保存的用户名和密码
 
     def initUI(self):
         """ 创建 UI 界面 """
@@ -126,7 +128,7 @@ class MedicalLoginUI(QWidget):
 
         # 左侧背景区域 - 检查图片文件是否存在，不存在则跳过
         left_frame = QLabel(self)
-        img_path = r"D:\\source_code\\pic4sign\\微信圖片_20250330195831.jpg"
+        img_path = r"D:\\source_code\\pic4sign\\sign_in.jpg"
 
         if os.path.exists(img_path):
             left_frame.setPixmap(QPixmap(img_path).scaled(400, 480, Qt.KeepAspectRatioByExpanding))
@@ -197,10 +199,6 @@ class MedicalLoginUI(QWidget):
         form_layout.addWidget(self.password_input)
         layout.addLayout(form_layout)
 
-        # # 记住密码选项
-        # remember_me = QCheckBox("记住密码")
-        # layout.addWidget(remember_me)
-
         # 记住密码选项
         self.remember_me = QCheckBox("记住密码")
         self.remember_me.setStyleSheet("""
@@ -225,7 +223,6 @@ class MedicalLoginUI(QWidget):
             }
         """)
         layout.addWidget(self.remember_me)
-
 
         # 按钮
         login_btn = QPushButton("登录")
@@ -356,8 +353,28 @@ class MedicalLoginUI(QWidget):
             }
         """
 
+    def load_credentials(self):
+        """加载保存的用户名和密码"""
+        if os.path.exists("credentials.json"):
+            with open("credentials.json", "r") as file:
+                credentials = json.load(file)
+                self.username_input.setText(credentials.get("username", ""))
+                self.password_input.setText(credentials.get("password", ""))
+                self.remember_me.setChecked(True)
+
+    def save_credentials(self, username, password):
+        """保存用户名和密码"""
+        credentials = {"username": username, "password": password}
+        with open("credentials.json", "w") as file:
+            json.dump(credentials, file)
+
+    def clear_credentials(self):
+        """清除保存的用户名和密码"""
+        if os.path.exists("credentials.json"):
+            os.remove("credentials.json")
+
     def check_credentials(self):
-        """ 检查登录凭据 """
+        """检查登录凭据"""
         username = self.username_input.text()
         password = self.password_input.text()
 
@@ -367,6 +384,10 @@ class MedicalLoginUI(QWidget):
 
         if user:
             QMessageBox.information(self, "登录成功", "欢迎使用智能医疗健康系统！")
+            if self.remember_me.isChecked():
+                self.save_credentials(username, password)
+            else:
+                self.clear_credentials()
             if self.main_window:
                 # 处理传入的是类还是实例的情况
                 if isinstance(self.main_window, type):
