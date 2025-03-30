@@ -1,7 +1,7 @@
 # models.py
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
-from datetime import datetime  # 新增导入
-from base import Base
+from base import Base  # 确保导入Base
 
 class User(Base):
     __tablename__ = "users"
@@ -9,15 +9,15 @@ class User(Base):
     username = Column(String(50), unique=True)
     password_hash = Column(String(100))
     created_at = Column(DateTime, default=datetime.now)
-    created_at = Column(DateTime)
-    last_login = Column(DateTime)  # 新增最后登录时间字段
+    last_login = Column(DateTime)
 
-class HealthRecord(Base):
+# 确保 HealthRecord 类存在且拼写正确
+class HealthRecord(Base):  # <-- 关键点：检查类名是否一致
     __tablename__ = "health_records"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    sbp = Column(Integer)
-    dbp = Column(Integer)
-    glucose = Column(Float)
-    triglycerides = Column(Float)
-    created_at = Column(DateTime)
+    sbp = Column(Integer)    # 收缩压
+    dbp = Column(Integer)    # 舒张压
+    glucose = Column(Float)  # 血糖
+    triglycerides = Column(Float)  # 甘油三酯
+    created_at = Column(DateTime, default=datetime.now)
