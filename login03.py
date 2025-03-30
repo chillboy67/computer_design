@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from hashlib import sha256
 import sys
 import os
+import json
 
 # 设置数据库连接
 DATABASE_URL = "sqlite:///users.db"
@@ -37,11 +38,19 @@ class DatabaseManager:
         self.create_admin_user()
 
     def add_user(self, username, email, password):
+        # 检查电子邮件是否已存在
+        if self.email_exists(email):
+            raise ValueError("电子邮件已被使用")
+
         # 创建密码哈希
         hashed_password = sha256(password.encode('utf-8')).hexdigest()
         new_user = User(username=username, email=email, password=hashed_password)
         self.session.add(new_user)
         self.session.commit()
+
+    def email_exists(self, email):
+        """检查电子邮件是否已存在"""
+        return self.session.query(User).filter_by(email=email).first() is not None
 
     def get_user(self, username, password):
         # Special case for admin/123 to ensure it always works
@@ -81,6 +90,7 @@ class MedicalLoginUI(QWidget):
         self.old_pos = None  # 记录鼠标拖动位置
         self.db_manager = DatabaseManager()  # 实例化数据库管理器
         self.initUI()
+        self.load_credentials()  # 加载保存的用户名和密码
 
     def initUI(self):
         """ 创建 UI 界面 """
@@ -92,27 +102,16 @@ class MedicalLoginUI(QWidget):
         title_placeholder = QLabel("智能医疗健康系统")
         title_placeholder.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         title_placeholder.setStyleSheet("color: #333;")
-        title_placeholder.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        title_placeholder.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
         self.minimize_button = QPushButton("—")
-        self.minimize_button.setFixedSize(30, 30)
+        self.minimize_button.setFixedSize(30, 20)
         self.minimize_button.setStyleSheet(self.title_button_style())
         self.minimize_button.clicked.connect(self.showMinimized)
 
         self.close_button = QPushButton("✕")
-        self.close_button.setFixedSize(30, 30)
-        self.close_button.setStyleSheet("""
-            QPushButton {
-                background-color: #e81123;
-                color: white;
-                border: none;
-                font-size: 16px;
-                border-radius: 15px;
-            }
-            QPushButton:hover {
-                background-color: #f1707a;
-            }
-        """)
+        self.close_button.setFixedSize(30, 20)
+        self.close_button.setStyleSheet(self.title_button_style())
         self.close_button.clicked.connect(self.close)
 
         title_bar.addWidget(title_placeholder)
@@ -126,7 +125,7 @@ class MedicalLoginUI(QWidget):
 
         # 左侧背景区域 - 检查图片文件是否存在，不存在则跳过
         left_frame = QLabel(self)
-        img_path = "C:\\Users\\MiKu\\Desktop\\pythonProject\\R-C.jpg"
+        img_path = r"pict 02\01.jpg"
 
         if os.path.exists(img_path):
             left_frame.setPixmap(QPixmap(img_path).scaled(400, 480, Qt.KeepAspectRatioByExpanding))
@@ -197,10 +196,6 @@ class MedicalLoginUI(QWidget):
         form_layout.addWidget(self.password_input)
         layout.addLayout(form_layout)
 
-        # # 记住密码选项
-        # remember_me = QCheckBox("记住密码")
-        # layout.addWidget(remember_me)
-
         # 记住密码选项
         self.remember_me = QCheckBox("记住密码")
         self.remember_me.setStyleSheet("""
@@ -225,7 +220,6 @@ class MedicalLoginUI(QWidget):
             }
         """)
         layout.addWidget(self.remember_me)
-
 
         # 按钮
         login_btn = QPushButton("登录")
@@ -345,19 +339,36 @@ class MedicalLoginUI(QWidget):
         """ 自定义标题栏按钮样式 """
         return """
             QPushButton {
-                background-color: #0277BD;
-                color: white;
+                background-color: transparent;
                 border: none;
                 font-size: 16px;
-                border-radius: 15px;
             }
             QPushButton:hover {
-                background-color: #01579B;
+                color: red;
             }
         """
+    def load_credentials(self):
+        """加载保存的用户名和密码"""
+        if os.path.exists("credentials.json"):
+            with open("credentials.json", "r") as file:
+                credentials = json.load(file)
+                self.username_input.setText(credentials.get("username", ""))
+                self.password_input.setText(credentials.get("password", ""))
+                self.remember_me.setChecked(True)
+
+    def save_credentials(self, username, password):
+        """保存用户名和密码"""
+        credentials = {"username": username, "password": password}
+        with open("credentials.json", "w") as file:
+            json.dump(credentials, file)
+
+    def clear_credentials(self):
+        """清除保存的用户名和密码"""
+        if os.path.exists("credentials.json"):
+            os.remove("credentials.json")
 
     def check_credentials(self):
-        """ 检查登录凭据 """
+        """检查登录凭据"""
         username = self.username_input.text()
         password = self.password_input.text()
 
@@ -367,6 +378,10 @@ class MedicalLoginUI(QWidget):
 
         if user:
             QMessageBox.information(self, "登录成功", "欢迎使用智能医疗健康系统！")
+            if self.remember_me.isChecked():
+                self.save_credentials(username, password)
+            else:
+                self.clear_credentials()
             if self.main_window:
                 # 处理传入的是类还是实例的情况
                 if isinstance(self.main_window, type):
@@ -386,10 +401,12 @@ class MedicalLoginUI(QWidget):
         email = self.email_input.text()
         password = self.reg_password_input.text()  # 使用重命名的变量
 
-        # 检查用户名是否已存在
-        if self.db_manager.user_exists(username):
-            QMessageBox.warning(self, "错误", "用户名已存在")
-            return
+        try:
+            self.db_manager.add_user(username, email, password)
+            QMessageBox.information(self, "注册成功", "账号已成功注册！")
+            self.show_login_page()
+        except ValueError as e:
+            QMessageBox.warning(self, "错误", str(e))
 
         self.db_manager.add_user(username, email, password)
         QMessageBox.information(self, "注册成功", "账号已成功注册！")
