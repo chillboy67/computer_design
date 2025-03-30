@@ -17,9 +17,6 @@ if __name__ == "__main__":
     # 只创建一个 QApplication 实例
     app = QApplication(sys.argv)
 
-    # 应用 Material 主题样式
-    apply_stylesheet(app, theme='default_light.xml')
-
     # 创建并显示登录窗口
     window = MedicalLoginUI(MainWindow)
     window.setWindowTitle("健康管理系统")

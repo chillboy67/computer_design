@@ -315,7 +315,7 @@ class LoadingScreen(QDialog):
         layout = QVBoxLayout(self)
 
         # 加载图片（从指定路径）
-        image_dir = r"D:\source_code\pict"
+        image_dir = r"pict"
 
         # 获取目录中的第一个图片文件
         image_path = None
