@@ -1,5 +1,5 @@
 '''
-运动处方页面，显示用户的运动处方结果，包括运动项目、运动频率、运动强度
+健康评估页面，显示用户的健康评估结果，包括心血管健康、糖脂代谢、体成分评估
 
 -- wy 2025-02-26
 '''
@@ -7,26 +7,28 @@
 import sys
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                               QLabel, QPushButton, QTabWidget, QScrollArea,
-                              QTextBrowser, QSplitter)
+                              QTextBrowser, QSplitter, QMessageBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from fresh import LoadingScreen
-from llm_utils import get_LLM_response
+from ai_for_halthy import get_AI_response
 
-class SportPrescriptionPage(QWidget):
+class HealthAssessmentPage(QWidget):
     def __init__(self, initial_data=None):
         super().__init__()
-        self.setWindowTitle("运动处方")
+        self.setWindowTitle("健康评估")
         self.resize(800, 430)
 
-        # 存储运动数据
+        # 存储健康评估数据
         self.health_data = initial_data or ""
 
         # 解析AI返回内容的不同部分
-        self.exercise_types = ""  # 运动项目
-        self.exercise_frequency = ""  # 运动频率
-        self.exercise_intensity = ""  # 运动强度
+        self.cardiovascular = ""  # 心血管健康
+        self.metabolism = ""      # 糖脂代谢
+        self.body_composition = "" # 体成分
+
+        # 解析AI返回的内容
         self.parse_ai_content()
 
         # 创建UI
@@ -36,32 +38,30 @@ class SportPrescriptionPage(QWidget):
         if initial_data:
             self.display_initial_data()
         else:
-            # 默认显示运动项目建议
-            self.show_cardiovascular()
+            self.show_default_message()
 
     def parse_ai_content(self):
         """解析AI返回的内容，分离出不同部分"""
         if not self.health_data:
             return
 
-        # 寻找运动项目部分
-        if "运动项目" in self.health_data:
-            start = self.health_data.find("运动项目")
-            end = self.health_data.find("运动频率") if "运动频率" in self.health_data else len(self.health_data)
-            self.exercise_types = f"<h2>运动项目</h2>{self.health_data[start + 4:end - 8]}"
+        # 寻找心血管健康部分
+        if "心血管健康" in self.health_data:
+            start = self.health_data.find("心血管健康")
+            end = self.health_data.find("糖脂代谢") if "糖脂代谢" in self.health_data else len(self.health_data)
+            self.cardiovascular = f"<h2>心血管健康评估</h2>{self.health_data[start+5:end - 8]}"
 
-        # 寻找运动频率部分
-        if "运动频率" in self.health_data:
-            start = self.health_data.find("运动频率")
-            end = self.health_data.find("运动强度") if "运动强度" in self.health_data else len(self.health_data)
-            self.exercise_frequency = f"<h2>运动频率</h2>{self.health_data[start + 4:end - 8]}"
+        # 寻找糖脂代谢部分
+        if "糖脂代谢" in self.health_data:
+            start = self.health_data.find("糖脂代谢")
+            end = self.health_data.find("体成分") if "体成分" in self.health_data else len(self.health_data)
+            self.metabolism = f"<h2>糖脂代谢评估</h2>{self.health_data[start+5:end - 8]}"
 
-        # 寻找运动强度部分
-        if "运动强度" in self.health_data:
-            start = self.health_data.find("运动强度")
+        # 寻找体成分部分
+        if "体成分" in self.health_data:
+            start = self.health_data.find("体成分")
             end = len(self.health_data)
-            self.exercise_intensity = f"<h2>运动强度</h2>{self.health_data[start + 4:end]}"
-
+            self.body_composition = f"<h2>体成分评估</h2>{self.health_data[start+3:end]}"
 
     def init_ui(self):
         """初始化界面"""
@@ -69,7 +69,7 @@ class SportPrescriptionPage(QWidget):
         main_layout = QVBoxLayout(self)
 
         # 页面标题
-        title_label = QLabel("运动处方报告")
+        title_label = QLabel("健康评估报告")
         title_label.setFont(QFont("Arial", 18, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(title_label)
@@ -83,9 +83,9 @@ class SportPrescriptionPage(QWidget):
 
         self.nav_buttons = []
         nav_items = [
-            ("运动项目", self.show_cardiovascular),
-            ("运动频率", self.show_metabolism),
-            ("运动强度", self.show_body_composition)
+            ("心血管健康", self.show_cardiovascular),
+            ("糖脂代谢", self.show_metabolism),
+            ("体成分", self.show_body_composition)
         ]
 
         for text, callback in nav_items:
@@ -119,10 +119,10 @@ class SportPrescriptionPage(QWidget):
         # 底部操作按钮区域
         bottom_layout = QHBoxLayout()
 
-        self.print_btn = QPushButton("打印处方")
+        self.print_btn = QPushButton("打印评估")
         self.print_btn.clicked.connect(self.print_report)
 
-        self.save_btn = QPushButton("保存处方")
+        self.save_btn = QPushButton("保存评估")
         self.save_btn.clicked.connect(self.save_report)
 
         self.close_btn = QPushButton("关闭")
@@ -141,68 +141,63 @@ class SportPrescriptionPage(QWidget):
         # 高亮第一个按钮
         self.highlight_button(0)
 
+    def show_default_message(self):
+        """显示默认消息"""
+        self.content_browser.setHtml("""
+            <h2>健康评估</h2>
+            <p>请在主界面输入您的健康数据，然后点击"健康评估"按钮获取个性化健康评估报告。</p>
+            <p>评估将包括：</p>
+            <ul>
+                <li>心血管健康状况</li>
+                <li>糖脂代谢状况</li>
+                <li>体成分分析</li>
+            </ul>
+        """)
+
     def show_cardiovascular(self):
-        """显示运动项目推荐"""
+        """显示心血管健康评估"""
         # 高亮当前按钮
         self.highlight_button(0)
 
         # 如果有AI生成的内容，则显示AI内容
-        if self.exercise_types:
-            self.content_browser.setHtml(self.exercise_types)
+        if self.cardiovascular:
+            self.content_browser.setHtml(self.cardiovascular)
         else:
             # 无AI内容时显示默认内容
             self.content_browser.setHtml("""
-                <h2>运动项目</h2>
-                <p>基于您的身体状况和运动喜好，以下是为您推荐的运动项目：</p>
-                <p>暂无个性化推荐，请输入您的健康数据并点击"运动处方"按钮获取。</p>
-                """)
+            <h2>心血管健康评估</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"健康评估"按钮获取。</p>
+            """)
 
     def show_metabolism(self):
-        """显示运动频率建议"""
+        """显示糖脂代谢评估"""
         # 高亮当前按钮
         self.highlight_button(1)
 
         # 如果有AI生成的内容，则显示AI内容
-        if self.exercise_frequency:
-            self.content_browser.setHtml(self.exercise_frequency)
+        if self.metabolism:
+            self.content_browser.setHtml(self.metabolism)
         else:
             # 无AI内容时显示默认内容
             self.content_browser.setHtml("""
-            <h2>运动频率</h2>
-            <p>暂无个性化推荐，请输入您的健康数据并点击"运动处方"按钮获取。</p>
+            <h2>糖脂代谢评估</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"健康评估"按钮获取。</p>
             """)
 
     def show_body_composition(self):
-        """显示运动强度建议"""
+        """显示体成分评估"""
         # 高亮当前按钮
         self.highlight_button(2)
 
         # 如果有AI生成的内容，则显示AI内容
-        if self.exercise_intensity:
-            self.content_browser.setHtml(self.exercise_intensity)
+        if self.body_composition:
+            self.content_browser.setHtml(self.body_composition)
         else:
             # 无AI内容时显示默认内容
             self.content_browser.setHtml("""
-            <h2>运动强度</h2>
-            <p>暂无个性化推荐，请输入您的健康数据并点击"运动处方"按钮获取。</p>
+            <h2>体成分评估</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"健康评估"按钮获取。</p>
             """)
-
-    def handle_ai_response(self, response):
-        """处理AI响应并显示结果"""
-        # 将AI返回的评估结果转换为HTML格式
-        html_content = f"""
-        <h2>个性化运动处方</h2>
-        <div class="ai-assessment">
-            {response}
-        </div>
-        """
-
-        # 更新显示内容
-        self.content_browser.setHtml(html_content)
-        self.health_data = html_content
-
-        # 高亮运动项目按钮（默认）
-        self.highlight_button(0)
 
     def highlight_button(self, index):
         """高亮选中的导航按钮"""
@@ -213,7 +208,7 @@ class SportPrescriptionPage(QWidget):
                 button.setStyleSheet("")
 
     def print_report(self):
-        """打印运动处方"""
+        """打印健康评估"""
         from PySide6.QtPrintSupport import QPrinter, QPrintDialog
 
         printer = QPrinter(QPrinter.HighResolution)
@@ -223,14 +218,14 @@ class SportPrescriptionPage(QWidget):
             self.content_browser.print_(printer)
 
     def save_report(self):
-        """保存运动处方为PDF"""
+        """保存健康评估为PDF"""
         from PySide6.QtWidgets import QFileDialog
         from PySide6.QtPrintSupport import QPrinter
 
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "保存运动处方",
-            "运动处方报告.pdf",
+            "保存健康评估",
+            "健康评估报告.pdf",
             "PDF文件 (*.pdf)"
         )
 
@@ -243,6 +238,6 @@ class SportPrescriptionPage(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = SportPrescriptionPage()
+    window = HealthAssessmentPage()
     window.show()
     sys.exit(app.exec())
