@@ -1,8 +1,3 @@
-'''
-程序主窗口代码，程序入口
-
--- wy 2025-02-26
-'''
 import sys
 from PySide6.QtWidgets import QApplication
 from qt_material import apply_stylesheet
@@ -16,6 +11,9 @@ if __name__ == "__main__":
 
     # 只创建一个 QApplication 实例
     app = QApplication(sys.argv)
+
+    # 应用 Material 主题样式
+    apply_stylesheet(app, theme='default_light.xml')
 
     # 创建并显示登录窗口
     window = MedicalLoginUI(MainWindow)

@@ -1,9 +1,3 @@
-'''
-健康评估页面，显示用户的健康评估结果，包括心血管健康、糖脂代谢、体成分评估
-
--- wy 2025-02-26
-'''
-
 import sys
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                               QLabel, QPushButton, QTabWidget, QScrollArea,

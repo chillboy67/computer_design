@@ -1,5 +1,4 @@
 from zhipuai import ZhipuAI
-
 api_key = '83e30db5ee714aecb44d9a81b9c359ac.niOJggGHdVK8bZnB'
 
 
