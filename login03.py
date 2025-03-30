@@ -38,11 +38,19 @@ class DatabaseManager:
         self.create_admin_user()
 
     def add_user(self, username, email, password):
+        # 检查电子邮件是否已存在
+        if self.email_exists(email):
+            raise ValueError("电子邮件已被使用")
+
         # 创建密码哈希
         hashed_password = sha256(password.encode('utf-8')).hexdigest()
         new_user = User(username=username, email=email, password=hashed_password)
         self.session.add(new_user)
         self.session.commit()
+
+    def email_exists(self, email):
+        """检查电子邮件是否已存在"""
+        return self.session.query(User).filter_by(email=email).first() is not None
 
     def get_user(self, username, password):
         # Special case for admin/123 to ensure it always works
@@ -407,14 +415,12 @@ class MedicalLoginUI(QWidget):
         email = self.email_input.text()
         password = self.reg_password_input.text()  # 使用重命名的变量
 
-        # 检查用户名是否已存在
-        if self.db_manager.user_exists(username):
-            QMessageBox.warning(self, "错误", "用户名已存在")
-            return
-
-        self.db_manager.add_user(username, email, password)
-        QMessageBox.information(self, "注册成功", "账号已成功注册！")
-        self.show_login_page()
+        try:
+            self.db_manager.add_user(username, email, password)
+            QMessageBox.information(self, "注册成功", "账号已成功注册！")
+            self.show_login_page()
+        except ValueError as e:
+            QMessageBox.warning(self, "错误", str(e))
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
