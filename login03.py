@@ -197,9 +197,35 @@ class MedicalLoginUI(QWidget):
         form_layout.addWidget(self.password_input)
         layout.addLayout(form_layout)
 
+        # # 记住密码选项
+        # remember_me = QCheckBox("记住密码")
+        # layout.addWidget(remember_me)
+
         # 记住密码选项
-        remember_me = QCheckBox("记住密码")
-        layout.addWidget(remember_me)
+        self.remember_me = QCheckBox("记住密码")
+        self.remember_me.setStyleSheet("""
+            QCheckBox {
+                spacing: 8px;
+                font-size: 12px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border: 2px solid #B0BEC5;
+                border-radius: 4px;
+                background-color: white;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #0277BD;
+                border-color: #0277BD;
+                image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="white" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>');
+            }
+            QCheckBox::indicator:hover {
+                border: 2px solid #0277BD;
+            }
+        """)
+        layout.addWidget(self.remember_me)
+
 
         # 按钮
         login_btn = QPushButton("登录")
