@@ -5,11 +5,14 @@
 '''
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QStackedWidget, QFormLayout, QMessageBox
+from user_service import UserService
+from models import User
 
 
 class LoginWindow(QWidget):
     def __init__(self, main_window):
         super().__init__()
+        self.main_window = main_window
 
         # 设置窗口标题
         self.setWindowTitle("登录")

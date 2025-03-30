@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from base import Base  # 从 base.py 导入 Base
+from datetime import datetime
 
 load_dotenv()
 
@@ -29,8 +30,15 @@ def init_db():
         if not UserService.verify_user("admin", "123"):
             print("正在创建默认用户 admin...")
             UserService.create_user("admin", "123")
-        else:
-            print("默认用户已存在")
+
+            # 更新admin用户的last_login时间
+        with SessionLocal() as session:
+            admin = session.query(User).filter(User.username == "admin").first()
+            if admin and not admin.last_login:
+                admin.last_login = datetime.now()
+                session.commit()
+                print("已更新admin用户登录时间")
+        print("数据库初始化完成")
     except Exception as e:
         print(f"[Critical Error] 初始化失败: {str(e)}")
-        raise  # 抛出异常以终止程序
+        raise
