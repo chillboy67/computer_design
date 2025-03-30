@@ -1,9 +1,3 @@
-'''
-运动处方页面，显示用户的运动处方结果，包括运动项目、运动频率、运动强度
-
--- wy 2025-02-26
-'''
-
 import sys
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                               QLabel, QPushButton, QTabWidget, QScrollArea,
@@ -13,6 +7,7 @@ from PySide6.QtGui import QFont
 
 from fresh import LoadingScreen
 from llm_utils import get_LLM_response
+
 
 class SportPrescriptionPage(QWidget):
     def __init__(self, initial_data=None):

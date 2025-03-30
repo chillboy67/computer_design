@@ -1,5 +1,4 @@
 from zhipuai import ZhipuAI
-
 api_key = '***REMOVED***'
 
 
