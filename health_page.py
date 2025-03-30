@@ -4,8 +4,6 @@
 -- wy 2025-02-26
 '''
 
-
-
 import sys
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                               QLabel, QPushButton, QTabWidget, QScrollArea,
@@ -22,8 +20,16 @@ class HealthAssessmentPage(QWidget):
         self.setWindowTitle("健康评估")
         self.resize(900, 600)
 
-        # 存储健康数据
+        # 存储健康评估数据
         self.health_data = initial_data or ""
+
+        # 解析AI返回内容的不同部分
+        self.cardiovascular = ""  # 心血管健康
+        self.metabolism = ""      # 糖脂代谢
+        self.body_composition = "" # 体成分
+
+        # 解析AI返回的内容
+        self.parse_ai_content()
 
         # 创建UI
         self.init_ui()
@@ -32,8 +38,30 @@ class HealthAssessmentPage(QWidget):
         if initial_data:
             self.display_initial_data()
         else:
-            # 默认显示心血管健康评估
-            self.show_cardiovascular()
+            self.show_default_message()
+
+    def parse_ai_content(self):
+        """解析AI返回的内容，分离出不同部分"""
+        if not self.health_data:
+            return
+
+        # 寻找心血管健康部分
+        if "心血管健康" in self.health_data:
+            start = self.health_data.find("心血管健康")
+            end = self.health_data.find("糖脂代谢") if "糖脂代谢" in self.health_data else len(self.health_data)
+            self.cardiovascular = f"<h2>心血管健康评估</h2>{self.health_data[start+5:end]}"
+
+        # 寻找糖脂代谢部分
+        if "糖脂代谢" in self.health_data:
+            start = self.health_data.find("糖脂代谢")
+            end = self.health_data.find("体成分") if "体成分" in self.health_data else len(self.health_data)
+            self.metabolism = f"<h2>糖脂代谢评估</h2>{self.health_data[start+5:end]}"
+
+        # 寻找体成分部分
+        if "体成分" in self.health_data:
+            start = self.health_data.find("体成分")
+            end = len(self.health_data)
+            self.body_composition = f"<h2>体成分评估</h2>{self.health_data[start+3:end]}"
 
     def init_ui(self):
         """初始化界面"""
@@ -53,12 +81,11 @@ class HealthAssessmentPage(QWidget):
         nav_widget = QWidget()
         nav_layout = QVBoxLayout(nav_widget)
 
-        # 创建导航按钮（移除“综合评估”按钮）
         self.nav_buttons = []
         nav_items = [
-            ("心血管健康评估", self.show_cardiovascular),
-            ("糖脂代谢评估", self.show_metabolism),
-            ("体成分评估", self.show_body_composition)
+            ("心血管健康", self.show_cardiovascular),
+            ("糖脂代谢", self.show_metabolism),
+            ("体成分", self.show_body_composition)
         ]
 
         for text, callback in nav_items:
@@ -92,10 +119,10 @@ class HealthAssessmentPage(QWidget):
         # 底部操作按钮区域
         bottom_layout = QHBoxLayout()
 
-        self.print_btn = QPushButton("打印报告")
+        self.print_btn = QPushButton("打印评估")
         self.print_btn.clicked.connect(self.print_report)
 
-        self.save_btn = QPushButton("保存报告")
+        self.save_btn = QPushButton("保存评估")
         self.save_btn.clicked.connect(self.save_report)
 
         self.close_btn = QPushButton("关闭")
@@ -109,125 +136,69 @@ class HealthAssessmentPage(QWidget):
         main_layout.addLayout(bottom_layout)
 
     def display_initial_data(self):
-        """显示从主窗口传递的初始健康数据"""
-        self.content_browser.setHtml(self.health_data)
+        """显示从主窗口传递的初始AI生成的健康评估数据"""
         # 默认显示心血管健康评估
         self.show_cardiovascular()
+        # 高亮第一个按钮
+        self.highlight_button(0)
+
+    def show_default_message(self):
+        """显示默认消息"""
+        self.content_browser.setHtml("""
+            <h2>健康评估</h2>
+            <p>请在主界面输入您的健康数据，然后点击"健康评估"按钮获取个性化健康评估报告。</p>
+            <p>评估将包括：</p>
+            <ul>
+                <li>心血管健康状况</li>
+                <li>糖脂代谢状况</li>
+                <li>体成分分析</li>
+            </ul>
+        """)
 
     def show_cardiovascular(self):
         """显示心血管健康评估"""
         # 高亮当前按钮
         self.highlight_button(0)
 
-        # 尝试从完整数据中提取心血管部分
-        if self.health_data and "心血管健康" in self.health_data:
-            try:
-                start_index = self.health_data.find("<h2>心血管健康")
-                if start_index == -1:
-                    start_index = self.health_data.find("<h3>心血管健康")
-
-                end_index = self.health_data.find("<h2>", start_index + 1)
-                if end_index == -1:
-                    end_index = self.health_data.find("<h3>", start_index + 1)
-
-                if start_index != -1 and end_index != -1:
-                    section = self.health_data[start_index:end_index]
-                    self.content_browser.setHtml(f"""
-                    {section}
-                    <p><a href="#" onclick="return false;">返回完整评估</a></p>
-                    """)
-                    return
-            except Exception:
-                pass
-
-        # 如果无法提取或数据不存在，显示默认内容
-        self.content_browser.setHtml("""
-        <h2>心血管健康评估</h2>
-        <p>基于您提供的血压和其他指标，以下是您的心血管健康状况评估：</p>
-        <ul>
-            <li><strong>血压状态：</strong>根据您提供的数据，您的血压处于正常/偏高/高血压范围。</li>
-            <li><strong>心脏功能：</strong>基于心率和其他指标的评估结果。</li>
-            <li><strong>血管弹性：</strong>血管健康状况评估。</li>
-        </ul>
-        <p>以上评估基于您提供的数据，如有不适请咨询医生获取专业建议。</p>
-        """)
+        # 如果有AI生成的内容，则显示AI内容
+        if self.cardiovascular:
+            self.content_browser.setHtml(self.cardiovascular)
+        else:
+            # 无AI内容时显示默认内容
+            self.content_browser.setHtml("""
+            <h2>心血管健康评估</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"健康评估"按钮获取。</p>
+            """)
 
     def show_metabolism(self):
         """显示糖脂代谢评估"""
         # 高亮当前按钮
         self.highlight_button(1)
 
-        # 尝试从完整数据中提取代谢部分
-        if self.health_data and "糖脂代谢" in self.health_data:
-            try:
-                start_index = self.health_data.find("<h2>糖脂代谢")
-                if start_index == -1:
-                    start_index = self.health_data.find("<h3>糖脂代谢")
-
-                end_index = self.health_data.find("<h2>", start_index + 1)
-                if end_index == -1:
-                    end_index = self.health_data.find("<h3>", start_index + 1)
-
-                if start_index != -1 and end_index != -1:
-                    section = self.health_data[start_index:end_index]
-                    self.content_browser.setHtml(f"""
-                    {section}
-                    <p><a href="#" onclick="return false;">返回完整评估</a></p>
-                    """)
-                    return
-            except Exception:
-                pass
-
-        self.content_browser.setHtml("""
-        <h2>糖脂代谢评估</h2>
-        <p>基于您提供的血糖和甘油三酯数据，以下是您的代谢健康状况：</p>
-        <ul>
-            <li><strong>血糖水平：</strong>您的空腹血糖水平分析。</li>
-            <li><strong>血脂状况：</strong>甘油三酯水平及其对健康的影响。</li>
-            <li><strong>代谢综合评分：</strong>基于多项指标的综合代谢健康评分。</li>
-        </ul>
-        <p>良好的糖脂代谢对预防心血管疾病和糖尿病至关重要。</p>
-        """)
+        # 如果有AI生成的内容，则显示AI内容
+        if self.metabolism:
+            self.content_browser.setHtml(self.metabolism)
+        else:
+            # 无AI内容时显示默认内容
+            self.content_browser.setHtml("""
+            <h2>糖脂代谢评估</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"健康评估"按钮获取。</p>
+            """)
 
     def show_body_composition(self):
         """显示体成分评估"""
         # 高亮当前按钮
         self.highlight_button(2)
 
-        # 尝试从完整数据中提取体成分部分
-        if self.health_data and "体成分" in self.health_data:
-            try:
-                start_index = self.health_data.find("<h2>体成分")
-                if start_index == -1:
-                    start_index = self.health_data.find("<h3>体成分")
-
-                end_index = self.health_data.find("<h2>", start_index + 1)
-                if end_index == -1:
-                    end_index = self.health_data.find("<h3>", start_index + 1)
-                    if end_index == -1:
-                        end_index = len(self.health_data)
-
-                if start_index != -1:
-                    section = self.health_data[start_index:end_index]
-                    self.content_browser.setHtml(f"""
-                    {section}
-                    <p><a href="#" onclick="return false;">返回完整评估</a></p>
-                    """)
-                    return
-            except Exception:
-                pass
-
-        self.content_browser.setHtml("""
-        <h2>体成分评估</h2>
-        <p>体成分分析对了解身体的肌肉、脂肪分布非常重要：</p>
-        <ul>
-            <li><strong>体重指数(BMI)：</strong>基于身高体重计算的BMI值及其分类。</li>
-            <li><strong>体脂率：</strong>体内脂肪占总体重的百分比及评估。</li>
-            <li><strong>肌肉含量：</strong>肌肉质量评估及其对新陈代谢的影响。</li>
-            <li><strong>内脏脂肪：</strong>内脏周围脂肪堆积水平及其健康风险评估。</li>
-        </ul>
-        <p>合理的体成分对整体健康和疾病预防具有重要意义。</p>
-        """)
+        # 如果有AI生成的内容，则显示AI内容
+        if self.body_composition:
+            self.content_browser.setHtml(self.body_composition)
+        else:
+            # 无AI内容时显示默认内容
+            self.content_browser.setHtml("""
+            <h2>体成分评估</h2>
+            <p>暂无个性化推荐，请输入您的健康数据并点击"健康评估"按钮获取。</p>
+            """)
 
     def highlight_button(self, index):
         """高亮选中的导航按钮"""
@@ -238,7 +209,7 @@ class HealthAssessmentPage(QWidget):
                 button.setStyleSheet("")
 
     def print_report(self):
-        """打印健康报告"""
+        """打印健康评估"""
         from PySide6.QtPrintSupport import QPrinter, QPrintDialog
 
         printer = QPrinter(QPrinter.HighResolution)
@@ -248,13 +219,13 @@ class HealthAssessmentPage(QWidget):
             self.content_browser.print_(printer)
 
     def save_report(self):
-        """保存健康报告为PDF"""
+        """保存健康评估为PDF"""
         from PySide6.QtWidgets import QFileDialog
         from PySide6.QtPrintSupport import QPrinter
 
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "保存健康报告",
+            "保存健康评估",
             "健康评估报告.pdf",
             "PDF文件 (*.pdf)"
         )
