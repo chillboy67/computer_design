@@ -18,7 +18,7 @@ class SportPrescriptionPage(QWidget):
     def __init__(self, initial_data=None):
         super().__init__()
         self.setWindowTitle("运动处方")
-        self.resize(900, 600)
+        self.resize(800, 430)
 
         # 存储运动数据
         self.health_data = initial_data or ""
@@ -48,13 +48,13 @@ class SportPrescriptionPage(QWidget):
         if "运动项目" in self.health_data:
             start = self.health_data.find("运动项目")
             end = self.health_data.find("运动频率") if "运动频率" in self.health_data else len(self.health_data)
-            self.exercise_types = f"<h2>运动项目</h2>{self.health_data[start + 4:end]}"
+            self.exercise_types = f"<h2>运动项目</h2>{self.health_data[start + 4:end - 8]}"
 
         # 寻找运动频率部分
         if "运动频率" in self.health_data:
             start = self.health_data.find("运动频率")
             end = self.health_data.find("运动强度") if "运动强度" in self.health_data else len(self.health_data)
-            self.exercise_frequency = f"<h2>运动频率</h2>{self.health_data[start + 4:end]}"
+            self.exercise_frequency = f"<h2>运动频率</h2>{self.health_data[start + 4:end - 8]}"
 
         # 寻找运动强度部分
         if "运动强度" in self.health_data:
@@ -136,10 +136,9 @@ class SportPrescriptionPage(QWidget):
         main_layout.addLayout(bottom_layout)
 
     def display_initial_data(self):
-        """显示从主窗口传递的初始AI生成的运动处方数据"""
-        # 显示完整的AI响应
-        self.content_browser.setHtml(f"<h1>个性化运动处方</h1>{self.health_data}")
-        # 默认高亮运动项目按钮
+        # 解析数据后直接显示运动项目
+        self.show_cardiovascular()  # 你需要创建这个方法
+        # 高亮第一个按钮
         self.highlight_button(0)
 
     def show_cardiovascular(self):

@@ -18,7 +18,7 @@ class HealthAssessmentPage(QWidget):
     def __init__(self, initial_data=None):
         super().__init__()
         self.setWindowTitle("健康评估")
-        self.resize(900, 600)
+        self.resize(800, 430)
 
         # 存储健康评估数据
         self.health_data = initial_data or ""
@@ -49,13 +49,13 @@ class HealthAssessmentPage(QWidget):
         if "心血管健康" in self.health_data:
             start = self.health_data.find("心血管健康")
             end = self.health_data.find("糖脂代谢") if "糖脂代谢" in self.health_data else len(self.health_data)
-            self.cardiovascular = f"<h2>心血管健康评估</h2>{self.health_data[start+5:end]}"
+            self.cardiovascular = f"<h2>心血管健康评估</h2>{self.health_data[start+5:end - 8]}"
 
         # 寻找糖脂代谢部分
         if "糖脂代谢" in self.health_data:
             start = self.health_data.find("糖脂代谢")
             end = self.health_data.find("体成分") if "体成分" in self.health_data else len(self.health_data)
-            self.metabolism = f"<h2>糖脂代谢评估</h2>{self.health_data[start+5:end]}"
+            self.metabolism = f"<h2>糖脂代谢评估</h2>{self.health_data[start+5:end - 8]}"
 
         # 寻找体成分部分
         if "体成分" in self.health_data:
@@ -136,9 +136,8 @@ class HealthAssessmentPage(QWidget):
         main_layout.addLayout(bottom_layout)
 
     def display_initial_data(self):
-        """显示从主窗口传递的初始AI生成的健康评估数据"""
-        # 默认显示心血管健康评估
-        self.show_cardiovascular()
+        # 解析数据后直接显示运动项目
+        self.show_cardiovascular()  # 你需要创建这个方法
         # 高亮第一个按钮
         self.highlight_button(0)
 
