@@ -126,7 +126,7 @@ class MedicalLoginUI(QWidget):
 
         # 左侧背景区域 - 检查图片文件是否存在，不存在则跳过
         left_frame = QLabel(self)
-        img_path = "C:\\Users\\MiKu\\Desktop\\pythonProject\\R-C.jpg"
+        img_path = r"D:\\source_code\\pic4sign\\微信圖片_20250330195831.jpg"
 
         if os.path.exists(img_path):
             left_frame.setPixmap(QPixmap(img_path).scaled(400, 480, Qt.KeepAspectRatioByExpanding))
