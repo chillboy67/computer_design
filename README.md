@@ -104,4 +104,5 @@ python main.py
 ---
 
 *Built with Python, PySide6, and ZhipuAI. Competition entry — National College Computer Design Competition.*
-origin from https://gitee.com/haotian-tang/computer_design
+
+Origin from https://gitee.com/haotian-tang/computer_design
