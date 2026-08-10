@@ -168,3 +168,5 @@ This project is open source under the MIT License.
 ## Contributors
 
 Welcome to submit Issues and Pull Requests to help improve the project!
+
+original project link https://gitee.com/haotian-tang/computer_design
