@@ -1,4 +1,5 @@
 # Intelligent Health Management Design System
+English | [中文](README.cn.md)
 
 An intelligent health management application built on Python and PyQt5, integrating AI large language models to provide users with personalized health assessment and exercise prescription services.
 
