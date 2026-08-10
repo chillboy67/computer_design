@@ -1,108 +1,169 @@
-# YuanQi Compass — AI-Powered Personal Health Management System
+# Intelligent Health Management Design System
 
-> A full-stack desktop application that delivers personalized health assessments and exercise prescriptions through LLM integration, built for the National College Computer Design Competition.
+An intelligent health management application built on Python and PyQt5, integrating AI large language models to provide users with personalized health assessment and exercise prescription services.
 
----
+## Features
 
-## Core Features
+### 🏥 Health Assessment
+- Cardiovascular health assessment
+- Metabolic health analysis
+- Body composition analysis
+- AI-driven health report generation
 
-- **Secure Authentication** — Password hashing with `bcrypt`; session-aware login/registration flow built on top of SQLAlchemy ORM
-- **Health Data Dashboard** — Users log daily vitals (BMI, blood pressure, sleep, activity) with persistent SQLite storage and real-time visual feedback
-- **AI Health Report Generation** — Structured prompts sent to ZhipuAI's GLM model produce individualized health assessments and actionable recommendations
-- **Personalized Exercise Prescriptions** — The LLM reasons over user health profiles to generate sport-specific training plans tailored to fitness level and goals
-- **Refresh & History View** — Dedicated buffer/refresh page (`fresh.py`) enables historical data review and report regeneration without re-entering data
-- **Modular Desktop UI** — Multi-page PySide6 interface with clean page routing via `main_window.py`, separating concerns across login, health, and sport modules
+### 🏃 Exercise Prescription
+- Personalized exercise recommendations
+- Targeted training plans
+- Scientific fitness guidance
 
----
+### 🔐 User System
+- Secure registration/login
+- Automatic credential saving
+- User history management
 
-## Tech Stack & Architecture
+### 🎨 Interface Features
+- Modern UI design
+- Smooth loading animations
+- Responsive interaction experience
 
-| Layer | Technology |
-|---|---|
-| UI Framework | PySide6 (Qt6 for Python) |
-| AI / LLM | ZhipuAI Python SDK (GLM-4 series) |
-| ORM & Database | SQLAlchemy + SQLite |
-| Auth & Security | bcrypt password hashing |
-| Config Management | python-dotenv (`.env` for API keys) |
-| Language | Python 3.10+ |
+## Tech Stack
 
-**Architecture:** The app follows a layered pattern — `models.py` defines the data schema, `db_utils.py` handles all database operations, `user_service.py` encapsulates business logic for user management, `llm_utils.py` abstracts all LLM calls, and page modules (`health_page.py`, `sport_page.py`) own only UI rendering.
+| Category | Technology |
+|------|------|
+| GUI Framework | PyQt5 |
+| AI Integration | Tongyi Qianwen/Other LLM APIs |
+| Database | SQLite |
+| ORM | SQLAlchemy |
 
----
-
-## AI Integration Highlights
-
-`llm_utils.py` acts as the dedicated LLM service layer:
-
-- **Context-Aware Prompting** — User health records are serialized and injected into system prompts, giving the model full context before generating any output
-- **Structured Output Parsing** — LLM responses are parsed and rendered back into the UI as formatted health reports
-- **Separation of Concerns** — All ZhipuAI API calls are centralized, making it trivial to swap models or providers without touching UI code
-- **Async-Ready Design** — LLM calls are isolated from the UI thread to keep the interface responsive during inference
-
----
-
-## Why This Project Demonstrates Engineering Depth
-
-This is not a prototype — it is a **production-quality competition submission** with real users, real data persistence, and a real AI backend. It demonstrates:
-
-- **Full-stack ownership**: from database schema design to LLM prompt engineering to pixel-level UI
-- **AI product thinking**: integrating an LLM not as a gimmick but as a functional feature that processes domain-specific data
-- **Engineering discipline**: environment-based config, modular file structure, ORM abstraction, and secure auth from day one
-
----
-
-## Repository Structure
+## Directory Structure
 
 ```
-computer_design/
-├── main.py              # App entry point
-├── main_window.py       # Central page router and window manager
-├── login03.py           # Login & registration UI
-├── health_page.py       # Health data input and display
-├── sport_page.py        # Exercise prescription page
-├── fresh.py             # History / refresh buffer page
-├── ai_for_halthy.py     # AI report trigger and rendering
-├── llm_utils.py         # ZhipuAI API abstraction layer
-├── user_service.py      # User business logic
-├── db_utils.py          # Database CRUD operations
-├── models.py            # SQLAlchemy ORM models
-├── base.py              # Declarative base setup
-├── .env                 # API keys (not committed)
-├── pict/                # UI assets
-└── pict 02/             # Login screen assets
+project/
+├── main.py           # Program entry
+├── main_window.py    # Main window
+├── login03.py        # Login/Registration interface
+├── health_page.py    # Health assessment page
+├── sport_page.py     # Exercise prescription page
+├── fresh.py          # Loading animation/Image processing
+├── ai_for_halthy.py  # AI integration
+├── llm_utils.py      # LLM utility class
+├── user_service.py   # User service
+├── models.py         # Data models
+├── db_utils.py       # Database utilities
+├── .env              # Environment configuration
+└── users.db          # User database
 ```
 
----
+## Quick Start
 
-## Getting Started
+### Environment Requirements
+- Python 3.8+
+- PyQt5
+- requests library
+
+### Install Dependencies
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/chillboy67/computer_design.git
-cd computer_design
+pip install PyQt5 requests sqlalchemy
+```
 
-# 2. Install dependencies
-pip install pyside6 sqlalchemy bcrypt zhipuai python-dotenv
+### Configuration Instructions
 
-# 3. Configure your ZhipuAI API key
-echo "ZHIPUAI_API_KEY=your_key_here" > .env
+Configure AI services in the `.env` file:
 
-# 4. Launch the application
+```env
+AI_API_KEY=your_api_key
+AI_ENDPOINT=your_endpoint
+```
+
+### Run Application
+
+```bash
 python main.py
 ```
 
-> Requires Python 3.10+. A valid ZhipuAI API key is needed for AI report generation.
+## User Guide
 
----
+### Login/Register
+1. Upon first launch, enter the login page
+2. Click "Register" to create a new account
+3. After logging in, choose to save credentials
 
-## Screenshots
+### Health Assessment
+1. Enter the main interface after logging in
+2. Click "Health Assessment" to start evaluation
+3. AI will generate a health report based on input
 
-| Login | Health Dashboard | AI Report |
-|---|---|---|
-| *(coming soon)* | *(coming soon)* | *(coming soon)* |
+### Get Exercise Prescription
+1. After completing health assessment
+2. Click "Exercise Prescription" to get personalized advice
+3. Can print or save the report
 
----
+## System Architecture
 
-*Built with Python, PySide6, and ZhipuAI. Competition entry — National College Computer Design Competition.*
+```
+┌─────────────────┐     ┌──────────────────┐
+│   MainWindow    │────▶│  HealthPage      │
+│                 │     │  - Cardiovascular│
+├─────────────────┤     │  - Metabolic     │
+│  User Auth      │────▶│  - Body Comp     │
+│  - Login        │     └──────────────────┘
+│  - Register     │     
+├─────────────────┤     ┌─────────────────┐
+│  Service Layer  │────▶│  SportPage      │
+│  - UserService  │     │  - Exercise Rx  │
+│  - DbUtils      │     │  - Training Plan│
+└─────────────────┘     └─────────────────┘
 
-Origin from https://gitee.com/haotian-tang/computer_design
+        AI Service
+    ┌─────────────┐
+    │  get_LLM_   │
+    │  response() │
+    └─────────────┘
+```
+
+## API Integration
+
+The project supports various AI service integration methods:
+
+```python
+from llm_utils import get_LLM_response
+
+# Call AI to get health advice
+response = get_LLM_response("Please analyze the user's cardiovascular health status...")
+```
+
+## Database Design
+
+### Users Table
+- `id`: Primary Key
+- `username`: Username
+- `email`: Email
+- `password_hash`: Encrypted password
+- `last_login`: Last login time
+
+### Health Records Table
+- `id`: Primary Key
+- `user_id`: Foreign key linking to user
+- `Assessment Data`: Stored in JSON format
+- `Created Time`: Record timestamp
+
+## Security Features
+
+- 🔒 Passwords stored using hash encryption
+- 🔑 Credentials saved locally encrypted
+- ✅ Special verification for admin accounts
+
+## Development Roadmap
+
+- [ ] Add more health indicator assessments
+- [ ] Support data export functionality
+- [ ] Integrate wearable device data
+- [ ] Add multi-language support
+
+## License
+
+This project is open source under the MIT License.
+
+## Contributors
+
+Welcome to submit Issues and Pull Requests to help improve the project!
