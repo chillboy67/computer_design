@@ -1,4 +1,4 @@
-"""大模型调用：统一管理客户端、超时和异常"""
+"""大模型调用：统一管理客户端、超时和异常，支持流式输出"""
 import logging
 from functools import lru_cache
 
@@ -21,25 +21,48 @@ def _get_client():
     return ZhipuAI(api_key=config.ZHIPUAI_API_KEY, timeout=config.LLM_TIMEOUT, max_retries=2)
 
 
-def chat(system_prompt, prompt):
+def stream_chat(system_prompt, prompt):
+    """流式调用大模型，逐段返回生成的文本（生成器）"""
     client = _get_client()
     try:
-        response = client.chat.completions.create(
+        stream = client.chat.completions.create(
             model=config.LLM_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.3,
+            stream=True,
         )
     except Exception as e:
         logger.exception("调用大模型失败")
         raise LLMError(f"AI 服务调用失败，请检查网络和 API Key 后重试。\n\n详细信息：{e}") from e
 
-    content = response.choices[0].message.content if response.choices else ""
-    if not content or not content.strip():
+    try:
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+    except Exception as e:
+        logger.exception("读取大模型输出失败")
+        raise LLMError(f"AI 服务连接中断，请稍后重试。\n\n详细信息：{e}") from e
+    finally:
+        stream.response.close()  # 提前停止时及时断开连接
+
+
+def chat(system_prompt, prompt):
+    """非流式调用，返回完整文本"""
+    content = "".join(stream_chat(system_prompt, prompt))
+    if not content.strip():
         raise LLMError("AI 服务返回了空内容，请稍后重试")
     return content
+
+
+def stream_health_assessment(prompt):
+    return stream_chat(HEALTH_SYSTEM_PROMPT, prompt)
+
+
+def stream_sport_prescription(prompt):
+    return stream_chat(SPORT_SYSTEM_PROMPT, prompt)
 
 
 def get_health_assessment(prompt):
