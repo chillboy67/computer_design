@@ -1,8 +1,23 @@
-import sys
-import os
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel)
-from PySide6.QtCore import Qt, Signal, QThread, QPropertyAnimation, QEasingCurve, Property, QTimer
-from PySide6.QtGui import QPixmap, QPainter, QColor, QLinearGradient, QBrush, QFont
+import logging
+
+from PySide6.QtCore import (Property, QEasingCurve, QPropertyAnimation, Qt,
+                            QThread, QTimer, Signal)
+from PySide6.QtGui import QBrush, QColor, QFont, QLinearGradient, QPainter, QPixmap
+from PySide6.QtWidgets import QDialog, QLabel, QMessageBox, QPushButton, QVBoxLayout
+
+import config
+from llm_utils import LLMError
+
+logger = logging.getLogger(__name__)
+
+# 仍在运行的后台线程。用户取消等待后线程还会继续跑完，需要保留引用防止被提前回收
+_active_workers = set()
+
+
+def _track_worker(worker):
+    for finished in [w for w in _active_workers if w.isFinished()]:
+        _active_workers.discard(finished)
+    _active_workers.add(worker)
 
 
 class ImageBrightener(QLabel):
@@ -14,7 +29,8 @@ class ImageBrightener(QLabel):
         # 加载图片
         self.original_pixmap = QPixmap(image_path)
         if self.original_pixmap.isNull():
-            # 如果无法加载图片，���建一个默认的灰色图片
+            # 如果无法加载图片，创建一个默认的灰色图片
+            logger.warning("加载图片失败：%s", image_path)
             self.original_pixmap = QPixmap(300, 200)
             self.original_pixmap.fill(QColor(200, 200, 200))
 
@@ -43,7 +59,6 @@ class ImageBrightener(QLabel):
 
     def updatePixmap(self):
         """根据当前亮度更新图片"""
-        # 创建绘图
         result = QPixmap(self.original_pixmap.size())
         result.fill(Qt.transparent)
 
@@ -53,29 +68,26 @@ class ImageBrightener(QLabel):
         gradient = QLinearGradient(0, 0, 0, self.height())
 
         # 计算亮度分界点位置
-        boundary = (1.0 - self._brightness) * self.height()
+        boundary = 1.0 - self._brightness
 
         gradient.setColorAt(0, QColor(255, 255, 255, 0))  # 顶部完全透明
-        gradient.setColorAt(boundary / self.height(), QColor(255, 255, 255, 0))  # 分界点完全透明
-        gradient.setColorAt(min(1.0, boundary / self.height() + 0.05), QColor(255, 255, 255, 255))  # 分界点下方完全不透明
+        gradient.setColorAt(boundary, QColor(255, 255, 255, 0))  # 分界点完全透明
+        gradient.setColorAt(min(1.0, boundary + 0.05), QColor(255, 255, 255, 255))  # 分界点下方完全不透明
         gradient.setColorAt(1, QColor(255, 255, 255, 255))  # 底部完全不透明
 
-        # 绘制原始图片
+        # 绘制原始图片，再使用渐变作为遮罩
         painter.drawPixmap(0, 0, self.original_pixmap)
-
-        # 使用渐变作为遮罩
         painter.setCompositionMode(QPainter.CompositionMode_DestinationIn)
         painter.fillRect(result.rect(), QBrush(gradient))
-
         painter.end()
 
-        # 设置pixmap
         self.setPixmap(result)
 
 
 class LoadingWorker(QThread):
-    """在后台线程中执行AI请求的工作类"""
-    finished = Signal(str)  # 结束信号，携带响应内容
+    """在后台线程中执行AI请求，避免界面卡死"""
+    succeeded = Signal(str)
+    failed = Signal(str)
 
     def __init__(self, ai_function, prompt):
         super().__init__()
@@ -83,13 +95,13 @@ class LoadingWorker(QThread):
         self.prompt = prompt
 
     def run(self):
-        """执行AI调用并发送结果"""
         try:
-            response = self.ai_function(self.prompt)
-            self.finished.emit(response)
+            self.succeeded.emit(self.ai_function(self.prompt))
+        except LLMError as e:
+            self.failed.emit(str(e))
         except Exception as e:
-            print(f"Error in AI request: {str(e)}")
-            self.finished.emit("生成内容时出错")
+            logger.exception("生成内容时出错")
+            self.failed.emit(f"生成内容时出错：{e}")
 
 
 class LoadingScreen(QDialog):
@@ -101,28 +113,9 @@ class LoadingScreen(QDialog):
         self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint)
         self.setModal(True)
 
-        # 保存父窗口引用
-        self.input_page = parent
-
-        # 创建UI元素
         layout = QVBoxLayout(self)
 
-        # 加载图片（从指定路径）
-        image_dir = r"D:\source_code\pict"
-
-        # 获取目录中的第一个图片文件
-        image_path = None
-        for file in os.listdir(image_dir):
-            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                image_path = os.path.join(image_dir, file)
-                break
-
-        # 如果没有找到图片，使用默认图像
-        if not image_path:
-            self.image_widget = ImageBrightener("")  # 空路径会创建默认图像
-        else:
-            self.image_widget = ImageBrightener(image_path)
-
+        self.image_widget = ImageBrightener(str(config.LOADING_IMAGE))
         layout.addWidget(self.image_widget, 0, Qt.AlignCenter)
 
         self.status_label = QLabel("正在生成AI内容，请稍候...", self)
@@ -130,84 +123,76 @@ class LoadingScreen(QDialog):
         self.status_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(self.status_label)
 
-        self.setLayout(layout)
+        self.cancel_button = QPushButton("取消")
+        self.cancel_button.clicked.connect(self.reject)
+        layout.addWidget(self.cancel_button, 0, Qt.AlignCenter)
 
-        # 调整对话框大小以适应图片
         self.adjustSize()
 
-        # 亮度动画 - 增加持续时间让图片亮得更慢
+        # 亮度动画 - 等待期间缓慢变亮到70%
         self.brightness_animation = QPropertyAnimation(self.image_widget, b"brightness")
-        self.brightness_animation.setDuration(20000)  # 20秒动画，让图片亮得更慢
+        self.brightness_animation.setDuration(20000)
         self.brightness_animation.setStartValue(0.0)
-        self.brightness_animation.setEndValue(0.7)  # 先亮到70%
+        self.brightness_animation.setEndValue(0.7)
         self.brightness_animation.setEasingCurve(QEasingCurve.InOutQuad)
 
-        # 最终亮度动画
+        # 最终亮度动画 - 收到结果后快速完全变亮
         self.final_animation = QPropertyAnimation(self.image_widget, b"brightness")
-        self.final_animation.setDuration(1200)  # 延长最终亮度动画
-        self.final_animation.setEndValue(1.0)  # 完全亮
+        self.final_animation.setDuration(1200)
+        self.final_animation.setEndValue(1.0)
         self.final_animation.setEasingCurve(QEasingCurve.OutQuad)
 
-        # 存储响应和回调
         self._response = None
-        self.callback = None
+        self._error = None
+        self._cancelled = False
         self.close_timer = QTimer(self)
         self.close_timer.setSingleShot(True)
-        self.close_timer.timeout.connect(self.execute_callback)
+        self.close_timer.timeout.connect(self.accept)
 
-    def execute_callback(self):
-        """在窗口关闭后执行回调"""
-        self.accept()
-        if self.callback and self._response:
-            self.callback(self._response)
-
-    def start_loading(self, ai_function, prompt, callback, input_page=None):
+    def start_loading(self, ai_function, prompt, callback):
         """
-        开始加载过程
+        在后台调用 AI，期间显示加载动画；成功后调用 callback(response)，失败时弹出提示
 
         Args:
-            ai_function: 调用AI的函数 (get_LLM_response 或 get_AI_response)
+            ai_function: 调用AI的函数，如 get_health_assessment
             prompt: 要发送给AI的提示文本
-            callback: 完成后的回调函数
-            input_page: 输入页面，将在加载时关闭
+            callback: 成功后的回调函数
         """
-        # 保存回调函数引用
-        self.callback = callback
+        worker = LoadingWorker(ai_function, prompt)
+        worker.succeeded.connect(self._on_success)
+        worker.failed.connect(self._on_failure)
+        _track_worker(worker)
 
-        # 保存输入页面引用
-        if input_page:
-            self.input_page = input_page
-
-        # 创建工作线程
-        self.worker = LoadingWorker(ai_function, prompt)
-        self.worker.finished.connect(self._on_ai_response)
-
-        # 启动亮度动画
         self.brightness_animation.start()
+        worker.start()
 
-        # 如果提供了输入页面，在显示加载界面前关闭它
-        if self.input_page:
-            self.input_page.hide()
+        if self.exec() and self._response is not None:
+            callback(self._response)
+        elif self._error:
+            QMessageBox.warning(self.parentWidget(), "生成失败", self._error)
 
-        # 显示对话框并启动工作线程
-        self.worker.start()
-        self.show()  # ���用show而不是exec以非模态方式显示
-        self.exec()
+    def reject(self):
+        """点击“取消”或按 Esc 时停止等待，后台请求返回的结果将被丢弃"""
+        self._cancelled = True
+        self.close_timer.stop()
+        self.brightness_animation.stop()
+        super().reject()
 
-    def _on_ai_response(self, response):
-        """AI响应完成后完成亮度动画并关闭对话框"""
-        # 保存响应，以便在关闭后执行回调
+    def _on_success(self, response):
+        if self._cancelled:
+            return
         self._response = response
-
-
-
-        # 显示状态文本
+        self.cancel_button.setEnabled(False)
         self.status_label.setText("生成完成，正在处理...")
 
-        # 停止当前动画并启动最终亮度动画
+        # 停止当前动画并启动最终亮度动画，动画结束后关闭对话框
         self.brightness_animation.stop()
         self.final_animation.setStartValue(self.image_widget.brightness)
         self.final_animation.start()
+        self.close_timer.start(1500)
 
-        # 设置计时器在动画完成后关闭窗口并执行回调
-        self.close_timer.start(1500)  # 给动画更多时间完成
+    def _on_failure(self, message):
+        if self._cancelled:
+            return
+        self._error = message
+        self.reject()
