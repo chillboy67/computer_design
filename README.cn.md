@@ -16,6 +16,11 @@
 - 针对性训练计划
 - 科学健身指导
 
+### 📈 历史记录与趋势
+- 每次生成的报告连同当时填写的数据一起保存
+- 可查看、删除历史报告，一键载入上次填写的数据
+- 体重、BMI、血压、心率、血糖等指标的变化趋势图，并标注参考线
+
 ### 🔐 用户系统
 - 注册/登录及输入校验
 - “记住密码”使用随机登录令牌实现，不保存明文密码
@@ -23,19 +28,21 @@
 
 ### 🎨 界面特性
 - Material 风格界面（qt-material）
-- AI 请求在后台线程执行，加载动画期间可取消
+- AI 流式输出：报告边生成边显示，可随时停止
 - 报告以 Markdown 渲染，支持分节浏览、打印和导出 PDF
 
 ## 技术栈
 
 | 类别 | 技术 |
 |------|------|
-| GUI框架 | PySide6 + qt-material |
+| GUI框架 | PySide6 + qt-material + QtCharts |
 | AI集成 | 智谱 AI GLM-4（`zhipuai`） |
 | 数据库 | SQLite |
 | ORM | SQLAlchemy 2.x |
 | 密码哈希 | bcrypt |
 | 配置管理 | python-dotenv |
+| 打包 | PyInstaller |
+| 持续集成 | GitHub Actions |
 
 ## 目录结构
 
@@ -45,18 +52,22 @@ project/
 ├── config.py            # 配置（路径、数据库、AI 服务），从 .env 读取
 ├── login03.py           # 登录注册界面
 ├── main_window.py       # 健康数据输入窗口
-├── report_page.py       # 报告页公共部分（导航、Markdown 渲染、打印/PDF）
+├── report_page.py       # 报告页公共部分（导航、流式显示、Markdown 渲染、打印/PDF）
 ├── health_page.py       # 健康评估报告页
 ├── sport_page.py        # 运动处方报告页
-├── fresh.py             # 加载动画 + 后台 AI 请求线程
+├── history_page.py      # 历史记录与趋势图
+├── fresh.py             # 加载动画 + 后台流式请求线程
 ├── llm_utils.py         # 大模型调用（智谱 AI）
 ├── prompts.py           # 输入字段定义、提示词构造、返回内容拆分
 ├── user_service.py      # 用户服务（注册、登录、记住密码令牌）
+├── record_service.py    # 健康记录服务（保存、查询、删除、趋势数据）
 ├── models.py            # 数据模型
 ├── db_utils.py          # 数据库初始化
 ├── base.py              # SQLAlchemy 基类
 ├── assets/              # 图片资源
-├── tests/               # 单元测试
+├── tests/               # 单元测试与界面测试
+├── health_app.spec      # PyInstaller 打包配置
+├── .github/workflows/   # 持续集成：自动测试、Windows 打包
 ├── requirements.txt     # 依赖列表
 └── .env.example         # 配置模板
 ```
@@ -64,7 +75,7 @@ project/
 ## 快速开始
 
 ### 环境要求
-- Python 3.9+
+- Python 3.10+
 
 ### 安装依赖
 
@@ -99,6 +110,19 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
+界面测试使用 Qt 的 offscreen 模式运行，不会弹出窗口。
+
+### 打包为可执行程序
+
+```bash
+pip install pyinstaller
+pyinstaller health_app.spec
+```
+
+打包结果在 `dist/HealthApp/` 目录（Windows 上运行其中的 `HealthApp.exe`）。把 `.env` 放在可执行文件旁边即可，数据库也会创建在该目录。
+
+每次推送代码时 GitHub Actions 会自动运行测试。没有 Windows 电脑也能打包：在仓库的 Actions 页面手动运行 **Build Windows App**（或推送 `v*` 标签），完成后下载 `HealthApp-windows` 即可。
+
 ## 用户指南
 
 ### 登录/注册
@@ -115,6 +139,11 @@ pytest
 1. 填写同样的健康数据
 2. 点击"运动处方"获取运动项目、频率、强度及注意事项
 3. 可打印报告或保存为 PDF
+
+### 历史记录与趋势
+1. 点击"历史记录与趋势"查看所有历史报告
+2. 双击记录可重新打开报告；选择指标可查看其变化趋势
+3. 在主界面点击"载入上次数据"可自动填入上次的数据
 
 ## 系统架构
 
@@ -142,11 +171,14 @@ pytest
 ## API集成
 
 ```python
-from llm_utils import get_health_assessment, get_sport_prescription
+from llm_utils import get_health_assessment, stream_health_assessment
 from prompts import build_health_prompt
 
 data = {"gender": "男", "age": 30, "height": 175, "weight": 70}
-report = get_health_assessment(build_health_prompt(data))  # 返回 Markdown 文本
+report = get_health_assessment(build_health_prompt(data))  # 返回完整 Markdown 文本
+
+for piece in stream_health_assessment(build_health_prompt(data)):  # 流式输出
+    print(piece, end="")
 ```
 
 系统提示词要求模型按固定的 `##` 二级标题输出 Markdown，`prompts.split_sections()` 据此把报告拆分为各个部分。
@@ -164,7 +196,10 @@ report = get_health_assessment(build_health_prompt(data))  # 返回 Markdown 文
 ### 健康记录表（`health_records`）
 - `id`: 主键
 - `user_id`: 外键关联用户
-- `sbp` / `dbp` / `glucose` / `triglycerides`: 关键指标
+- `record_type`: `health`（健康评估）或 `sport`（运动处方）
+- `gender` / `age` / `height` / `weight` / `bmi` / `body_fat` / `muscle_mass` / `waist`
+- `sbp` / `dbp` / `heart_rate` / `glucose` / `triglycerides`
+- `report_text`: 生成的报告（Markdown）
 - `created_at`: 记录时间
 
 启动时会自动为旧版本数据库补齐缺少的列，旧数据可以继续使用。
@@ -181,7 +216,9 @@ report = get_health_assessment(build_health_prompt(data))  # 返回 Markdown 文
 
 ## 开发路线
 
-- [ ] 保存历史评估记录并展示指标趋势
+- [x] 保存历史评估记录并展示指标趋势
+- [x] 流式输出
+- [x] 打包为 Windows 可执行程序
 - [ ] 添加更多健康指标评估
 - [ ] 集成可穿戴设备数据
 - [ ] 添加多语言支持

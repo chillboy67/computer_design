@@ -16,6 +16,11 @@ An intelligent health management application built on Python and PySide6 (Qt 6),
 - Targeted training plans
 - Scientific fitness guidance
 
+### 📈 History & Trends
+- Every report is saved together with the data it was based on
+- View or delete past reports, and reload the last data into the form
+- Trend charts for weight, BMI, blood pressure, heart rate, glucose and more, with reference lines
+
 ### 🔐 User System
 - Registration/login with input validation
 - "Remember me" via a random login token (no plain-text password is stored)
@@ -23,19 +28,21 @@ An intelligent health management application built on Python and PySide6 (Qt 6),
 
 ### 🎨 Interface Features
 - Material-style UI (qt-material)
-- AI requests run in a background thread with a cancellable loading animation
+- AI output is streamed: the report appears as it is generated and can be stopped at any time
 - Reports rendered from Markdown, with section navigation, printing and PDF export
 
 ## Tech Stack
 
 | Category | Technology |
 |------|------|
-| GUI Framework | PySide6 + qt-material |
+| GUI Framework | PySide6 + qt-material + QtCharts |
 | AI Integration | Zhipu AI GLM-4 (`zhipuai`) |
 | Database | SQLite |
 | ORM | SQLAlchemy 2.x |
 | Password Hashing | bcrypt |
 | Configuration | python-dotenv |
+| Packaging | PyInstaller |
+| CI | GitHub Actions |
 
 ## Directory Structure
 
@@ -45,18 +52,22 @@ project/
 ├── config.py            # Configuration (paths, database, AI service), read from .env
 ├── login03.py           # Login/Registration interface
 ├── main_window.py       # Health data input window
-├── report_page.py       # Shared report page (navigation, Markdown rendering, print/PDF)
+├── report_page.py       # Shared report page (navigation, streaming, Markdown rendering, print/PDF)
 ├── health_page.py       # Health assessment report page
 ├── sport_page.py        # Exercise prescription report page
-├── fresh.py             # Loading animation + background AI worker thread
+├── history_page.py      # History list and trend charts
+├── fresh.py             # Loading animation + background streaming worker thread
 ├── llm_utils.py         # LLM client (Zhipu AI)
 ├── prompts.py           # Input fields, prompt building, response section parsing
 ├── user_service.py      # User service (registration, login, remember-me token)
+├── record_service.py    # Health record service (save, list, delete, trends)
 ├── models.py            # Data models
 ├── db_utils.py          # Database initialization
 ├── base.py              # SQLAlchemy declarative base
 ├── assets/              # Images
-├── tests/               # Unit tests
+├── tests/               # Unit and GUI tests
+├── health_app.spec      # PyInstaller packaging config
+├── .github/workflows/   # CI: tests, Windows build
 ├── requirements.txt     # Dependencies
 └── .env.example         # Configuration template
 ```
@@ -64,7 +75,7 @@ project/
 ## Quick Start
 
 ### Environment Requirements
-- Python 3.9+
+- Python 3.10+
 
 ### Install Dependencies
 
@@ -99,6 +110,19 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
+GUI tests use Qt's offscreen mode, so no window will pop up.
+
+### Package as an Executable
+
+```bash
+pip install pyinstaller
+pyinstaller health_app.spec
+```
+
+The app is generated in `dist/HealthApp/` (run `HealthApp.exe` on Windows). Put your `.env` next to the executable; the database is created there as well.
+
+GitHub Actions runs the tests on every push. To get a Windows build without a Windows machine, run the **Build Windows App** workflow manually from the Actions tab (or push a `v*` tag) and download the `HealthApp-windows` artifact.
+
 ## User Guide
 
 ### Login/Register
@@ -115,6 +139,11 @@ pytest
 1. Fill in the same health data
 2. Click "Exercise Prescription" to get exercise type, frequency, intensity and precautions
 3. Print the report or save it as PDF
+
+### History & Trends
+1. Click "History & Trends" to see all past reports
+2. Double-click a record to reopen its report, or select a metric to see how it changes over time
+3. Click "Load last data" in the main window to fill the form with your previous data
 
 ## System Architecture
 
@@ -142,11 +171,14 @@ pytest
 ## API Integration
 
 ```python
-from llm_utils import get_health_assessment, get_sport_prescription
+from llm_utils import get_health_assessment, stream_health_assessment
 from prompts import build_health_prompt
 
 data = {"gender": "男", "age": 30, "height": 175, "weight": 70}
-report = get_health_assessment(build_health_prompt(data))  # Markdown text
+report = get_health_assessment(build_health_prompt(data))  # full Markdown text
+
+for piece in stream_health_assessment(build_health_prompt(data)):  # streaming
+    print(piece, end="")
 ```
 
 The system prompts ask the model to answer in Markdown with fixed `##` headings, which `prompts.split_sections()` uses to split the report into sections.
@@ -164,7 +196,10 @@ The system prompts ask the model to answer in Markdown with fixed `##` headings,
 ### Health Records Table (`health_records`)
 - `id`: Primary Key
 - `user_id`: Foreign key linking to user
-- `sbp` / `dbp` / `glucose` / `triglycerides`: Key indicators
+- `record_type`: `health` (assessment) or `sport` (exercise prescription)
+- `gender` / `age` / `height` / `weight` / `bmi` / `body_fat` / `muscle_mass` / `waist`
+- `sbp` / `dbp` / `heart_rate` / `glucose` / `triglycerides`
+- `report_text`: The generated report (Markdown)
 - `created_at`: Record timestamp
 
 Missing columns are added automatically on startup, so databases created by older versions keep working.
@@ -181,7 +216,9 @@ Reports are generated by AI for health management reference only and are not a s
 
 ## Development Roadmap
 
-- [ ] Save assessment history and show indicator trends
+- [x] Save assessment history and show indicator trends
+- [x] Streaming output
+- [x] Windows executable packaging
 - [ ] Add more health indicator assessments
 - [ ] Integrate wearable device data
 - [ ] Add multi-language support
