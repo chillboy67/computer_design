@@ -145,7 +145,7 @@ def test_input_validation(qapp, user, messages):
 def test_missing_api_key_shows_error(qapp, user, messages):
     window = make_main_window(qapp)
     window.open_health_assessment()
-    assert messages[-1][1] == "生成失败" and "ZHIPUAI_API_KEY" in messages[-1][2]
+    assert messages[-1][1] == "生成失败" and "LLM_API_KEY" in messages[-1][2]
     assert window.report_windows == []
 
 

@@ -8,7 +8,9 @@ import pytest
 _tmp = Path(tempfile.mkdtemp())
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp / 'test.db'}"
 os.environ["DEFAULT_ADMIN_PASSWORD"] = ""
+os.environ["LLM_API_KEY"] = ""
 os.environ["ZHIPUAI_API_KEY"] = ""
+os.environ["LLM_BASE_URL"] = ""
 os.environ["XDG_CONFIG_HOME"] = str(_tmp / "config")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 

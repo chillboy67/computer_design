@@ -23,8 +23,9 @@ APP_ICON = ASSETS_DIR / "app.ico"
 # 数据库：默认放在程序目录下，避免从其他目录启动时找不到数据库
 DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{APP_DIR / 'health_db.sqlite'}"
 
-# AI 服务
-ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY", "").strip()
+# AI 服务：默认使用智谱 AI；填写 LLM_BASE_URL 后可换成其他兼容 OpenAI 接口格式的服务
+LLM_API_KEY = (os.getenv("LLM_API_KEY") or os.getenv("ZHIPUAI_API_KEY") or "").strip()  # 兼容旧配置名
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").strip() or None  # 为空时使用智谱 AI 的接口地址
 LLM_MODEL = os.getenv("LLM_MODEL", "glm-4-plus").strip() or "glm-4-plus"
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "60") or 60)
 

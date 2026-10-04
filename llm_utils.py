@@ -3,6 +3,7 @@ import logging
 from functools import lru_cache
 
 from zhipuai import ZhipuAI
+from zhipuai.core import NOT_GIVEN
 
 import config
 from prompts import HEALTH_SYSTEM_PROMPT, SPORT_SYSTEM_PROMPT
@@ -16,9 +17,14 @@ class LLMError(RuntimeError):
 
 @lru_cache(maxsize=1)
 def _get_client():
-    if not config.ZHIPUAI_API_KEY:
-        raise LLMError("未配置 ZHIPUAI_API_KEY，请参照 .env.example 在 .env 文件中填写智谱 AI 的 API Key")
-    return ZhipuAI(api_key=config.ZHIPUAI_API_KEY, timeout=config.LLM_TIMEOUT, max_retries=2)
+    if not config.LLM_API_KEY:
+        raise LLMError("未配置 LLM_API_KEY，请参照 .env.example 在 .env 文件中填写大模型服务的 API Key")
+    return ZhipuAI(
+        api_key=config.LLM_API_KEY,
+        base_url=config.LLM_BASE_URL,
+        timeout=config.LLM_TIMEOUT,
+        max_retries=2,
+    )
 
 
 def stream_chat(system_prompt, prompt):
@@ -33,6 +39,9 @@ def stream_chat(system_prompt, prompt):
             ],
             temperature=0.3,
             stream=True,
+            # SDK 默认会带上值为 null 的智谱专有参数，部分 OpenAI 兼容服务不接受，这里不发送
+            response_format=NOT_GIVEN,
+            thinking=NOT_GIVEN,
         )
     except Exception as e:
         logger.exception("调用大模型失败")
