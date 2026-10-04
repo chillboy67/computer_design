@@ -36,7 +36,7 @@
 | 类别 | 技术 |
 |------|------|
 | GUI框架 | PySide6 + qt-material + QtCharts |
-| AI集成 | 智谱 AI GLM-4（`zhipuai`） |
+| AI集成 | 智谱 AI GLM-4（`zhipuai`），可换成其他兼容 OpenAI 接口的大模型 |
 | 数据库 | SQLite |
 | ORM | SQLAlchemy 2.x |
 | 密码哈希 | bcrypt |
@@ -72,7 +72,19 @@ project/
 └── .env.example         # 配置模板
 ```
 
-## 快速开始
+## 下载使用（Windows，无需安装 Python）
+
+1. 打开 [Build Windows App](https://github.com/chillboy67/computer_design/actions/workflows/build.yml)，点进最新一次成功（绿色 ✓）的运行，在页面底部 **Artifacts** 中下载 `HealthApp-windows`（需要登录 GitHub 账号）
+2. 解压后进入 `HealthApp` 文件夹，把 `.env.example` 复制一份并改名为 `.env`
+3. 用记事本打开 `.env`，在 `LLM_API_KEY=` 后面填入你的 API Key（见下方[配置说明](#配置说明)）
+4. 双击 `HealthApp.exe` 运行，首次使用先注册账号
+
+说明：
+- 程序没有数字签名，首次运行时 Windows 可能提示“已保护你的电脑”，点击“更多信息 → 仍要运行”即可
+- 账号和历史记录保存在同一文件夹的 `health_db.sqlite` 中，更换版本时保留这个文件和 `.env` 即可
+- 下载文件保留 90 天，过期后在上面的页面点击 **Run workflow** 重新打包
+
+## 从源码运行
 
 ### 环境要求
 - Python 3.10+
@@ -85,15 +97,31 @@ pip install -r requirements.txt
 
 ### 配置说明
 
-复制 `.env.example` 为 `.env`，并填写智谱 AI 的 API Key（[open.bigmodel.cn](https://open.bigmodel.cn/)）：
+复制 `.env.example` 为 `.env` 并填写。默认使用智谱 AI，只需填写在 [open.bigmodel.cn](https://open.bigmodel.cn/) 申请的 API Key：
 
 ```env
-ZHIPUAI_API_KEY=your_api_key
-LLM_MODEL=glm-4-plus
-# 可选：首次启动时创建演示账号
-DEFAULT_ADMIN_USERNAME=admin
-DEFAULT_ADMIN_PASSWORD=your_demo_password
+LLM_API_KEY=your_api_key
 ```
+
+也可以换成其他兼容 OpenAI 接口格式的大模型服务，不需要改代码，同时填写接口地址和模型名称即可：
+
+| 服务 | LLM_BASE_URL | LLM_MODEL |
+|------|------|------|
+| 智谱 AI（默认） | 留空 | `glm-4-plus` |
+| DeepSeek | `https://api.deepseek.com` | `deepseek-chat` |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| Kimi | `https://api.moonshot.cn/v1` | `moonshot-v1-8k` |
+
+```env
+# 例如使用 DeepSeek
+LLM_API_KEY=your_deepseek_key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-chat
+```
+
+接口地址和模型名称以各服务商的文档为准。旧版配置中的 `ZHIPUAI_API_KEY` 仍然有效。
+
+可选：填写 `DEFAULT_ADMIN_USERNAME` 和 `DEFAULT_ADMIN_PASSWORD`，首次启动时会自动创建演示账号。
 
 `.env` 已加入 `.gitignore`，不会被提交到仓库。
 
@@ -121,7 +149,7 @@ pyinstaller health_app.spec
 
 打包结果在 `dist/HealthApp/` 目录（Windows 上运行其中的 `HealthApp.exe`）。把 `.env` 放在可执行文件旁边即可，数据库也会创建在该目录。
 
-每次推送代码时 GitHub Actions 会自动运行测试。没有 Windows 电脑也能打包：在仓库的 Actions 页面手动运行 **Build Windows App**（或推送 `v*` 标签），完成后下载 `HealthApp-windows` 即可。
+每次推送代码时 GitHub Actions 会自动运行测试。没有 Windows 电脑也能打包：在 [Build Windows App](https://github.com/chillboy67/computer_design/actions/workflows/build.yml) 页面点击 **Run workflow**，完成后下载 `HealthApp-windows` 即可。
 
 ## 用户指南
 
@@ -169,6 +197,8 @@ pyinstaller health_app.spec
 ```
 
 ## API集成
+
+调用哪个服务由 `.env` 中的 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL` 决定：
 
 ```python
 from llm_utils import get_health_assessment, stream_health_assessment

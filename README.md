@@ -36,7 +36,7 @@ An intelligent health management application built on Python and PySide6 (Qt 6),
 | Category | Technology |
 |------|------|
 | GUI Framework | PySide6 + qt-material + QtCharts |
-| AI Integration | Zhipu AI GLM-4 (`zhipuai`) |
+| AI Integration | Zhipu AI GLM-4 (`zhipuai`), switchable to any OpenAI-compatible LLM |
 | Database | SQLite |
 | ORM | SQLAlchemy 2.x |
 | Password Hashing | bcrypt |
@@ -72,7 +72,19 @@ project/
 └── .env.example         # Configuration template
 ```
 
-## Quick Start
+## Download (Windows, no Python needed)
+
+1. Open [Build Windows App](https://github.com/chillboy67/computer_design/actions/workflows/build.yml), click the latest successful run (green ✓) and download `HealthApp-windows` under **Artifacts** at the bottom of the page (requires a GitHub login)
+2. Unzip it, open the `HealthApp` folder and copy `.env.example` to `.env`
+3. Open `.env` in Notepad and put your API key after `LLM_API_KEY=` (see [Configuration](#configuration-instructions))
+4. Double-click `HealthApp.exe` and register an account on first use
+
+Notes:
+- The app is not code-signed, so Windows may show "Windows protected your PC" on first launch; click "More info → Run anyway"
+- Accounts and history are stored in `health_db.sqlite` in the same folder; keep it and `.env` when upgrading
+- Downloads are kept for 90 days; after that, click **Run workflow** on the page above to build again
+
+## Run from Source
 
 ### Environment Requirements
 - Python 3.10+
@@ -85,15 +97,31 @@ pip install -r requirements.txt
 
 ### Configuration Instructions
 
-Copy `.env.example` to `.env` and fill in your Zhipu AI API key ([open.bigmodel.cn](https://open.bigmodel.cn/)):
+Copy `.env.example` to `.env` and fill it in. Zhipu AI is used by default, so only the API key from [open.bigmodel.cn](https://open.bigmodel.cn/) is needed:
 
 ```env
-ZHIPUAI_API_KEY=your_api_key
-LLM_MODEL=glm-4-plus
-# Optional: create a demo account on first launch
-DEFAULT_ADMIN_USERNAME=admin
-DEFAULT_ADMIN_PASSWORD=your_demo_password
+LLM_API_KEY=your_api_key
 ```
+
+Any other OpenAI-compatible LLM service works too, without code changes — just set the endpoint and model:
+
+| Service | LLM_BASE_URL | LLM_MODEL |
+|------|------|------|
+| Zhipu AI (default) | leave empty | `glm-4-plus` |
+| DeepSeek | `https://api.deepseek.com` | `deepseek-chat` |
+| Qwen (Tongyi Qianwen) | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| Kimi | `https://api.moonshot.cn/v1` | `moonshot-v1-8k` |
+
+```env
+# Example: DeepSeek
+LLM_API_KEY=your_deepseek_key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-chat
+```
+
+Check each provider's documentation for the current endpoint and model names. The old `ZHIPUAI_API_KEY` setting still works.
+
+Optional: set `DEFAULT_ADMIN_USERNAME` and `DEFAULT_ADMIN_PASSWORD` to create a demo account on first launch.
 
 `.env` is ignored by git, so your key will not be committed.
 
@@ -121,7 +149,7 @@ pyinstaller health_app.spec
 
 The app is generated in `dist/HealthApp/` (run `HealthApp.exe` on Windows). Put your `.env` next to the executable; the database is created there as well.
 
-GitHub Actions runs the tests on every push. To get a Windows build without a Windows machine, run the **Build Windows App** workflow manually from the Actions tab (or push a `v*` tag) and download the `HealthApp-windows` artifact.
+GitHub Actions runs the tests on every push. To get a Windows build without a Windows machine, click **Run workflow** on the [Build Windows App](https://github.com/chillboy67/computer_design/actions/workflows/build.yml) page and download the `HealthApp-windows` artifact.
 
 ## User Guide
 
@@ -169,6 +197,8 @@ GitHub Actions runs the tests on every push. To get a Windows build without a Wi
 ```
 
 ## API Integration
+
+The service used is decided by `LLM_API_KEY`, `LLM_BASE_URL` and `LLM_MODEL` in `.env`:
 
 ```python
 from llm_utils import get_health_assessment, stream_health_assessment
