@@ -17,7 +17,7 @@ load_dotenv(APP_DIR / ".env")
 # 静态资源
 ASSETS_DIR = RESOURCE_DIR / "assets"
 LOGIN_IMAGE = ASSETS_DIR / "login.jpg"
-LOADING_IMAGE = ASSETS_DIR / "loading.png"
+LOADING_IMAGE = ASSETS_DIR / "loading.jpg"
 APP_ICON = ASSETS_DIR / "app.ico"
 
 # 数据库：默认放在程序目录下，避免从其他目录启动时找不到数据库
