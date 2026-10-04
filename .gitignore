@@ -13,6 +13,10 @@ __pycache__/
 .venv/
 venv/
 
+# PyInstaller 打包输出
+build/
+dist/
+
 # IDE / 系统文件
 .idea/
 .vscode/
