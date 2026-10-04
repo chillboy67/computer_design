@@ -1,0 +1,55 @@
+name: Build Windows App
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write  # 推送标签时把打包结果附加到 Release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt "pyinstaller>=6.0"
+
+      - name: Build
+        run: pyinstaller --noconfirm health_app.spec
+
+      - name: Self check
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $p = Start-Process -FilePath dist\HealthApp\HealthApp.exe -ArgumentList "--self-check" -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "self check failed with exit code $($p.ExitCode)" }
+          Remove-Item dist\HealthApp\health_db.sqlite -ErrorAction SilentlyContinue
+
+      - name: Add config template
+        shell: pwsh
+        run: Copy-Item .env.example dist\HealthApp\.env.example
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HealthApp-windows
+          path: dist/HealthApp
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          Compress-Archive -Path dist\HealthApp -DestinationPath HealthApp-windows.zip
+          gh release create "${{ github.ref_name }}" HealthApp-windows.zip --title "${{ github.ref_name }}" --notes "Windows 版本，解压后运行 HealthApp.exe" 2>$null
+          if ($LASTEXITCODE -ne 0) { gh release upload "${{ github.ref_name }}" HealthApp-windows.zip --clobber }
